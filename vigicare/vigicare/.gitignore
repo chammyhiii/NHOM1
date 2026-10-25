@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+venv/
+env/
+.venv/
+
+# Environment (MẬT KHẨU!)
+.env
+.env.*
+
+# Data runtime
+data/*.db
+data/*.db-journal
+data/logs/
+data/snapshots/*.jpg
+data/snapshots/*.JPG
+data/snapshots/*.png
+data/test_full.JPG
+!data/.gitkeep
+!data/snapshots/.gitkeep
+
+# Models (ignore model quá nặng >50MB, giữ yolov8n-pose để chạy ngay trên Render Cloud)
+*.onnx
+*.pt
+*.pth
+models/*.onnx
+models/*.pt
+models/*.pth
+!models/README.md
+!models/yolov8n-pose.onnx
+!models/yolov8n-pose.pt
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Backup
+vigicare-backup-*/
