@@ -13,7 +13,9 @@
     sidebar.appendChild(brand);
 
     const nav = el('nav', { class: 'sidebar__nav' });
-    VC.NAV.forEach(item => {
+    const items = VC.NAV.slice();
+    items.push({ id: 'admin', label: 'Quản trị doanh thu', icon: 'shield' });
+    items.forEach(item => {
       const btn = el('button', {
         class: `nav-btn ${store.state.view === item.id ? 'is-active' : ''}`,
         'data-view': item.id,
@@ -53,6 +55,33 @@
 
     const clock = el('span', { class: 'kbd', id: 'clock', style: 'padding:8px 14px;font-size:13px;color:var(--primary)' }, fmtTime());
     actions.appendChild(clock);
+
+    const curPlan = (VC.auth && VC.auth.plan()) || 'free';
+    const curUser = VC.auth && VC.auth.user;
+    if (curPlan === 'free') {
+      actions.appendChild(el('button', {
+        class: 'upgrade-chip',
+        title: 'Mua bản quyền trọn đời — mở khóa đa camera, lịch sử & gọi khẩn cấp',
+        onclick: () => go('upgrade')
+      }, '👑 Nâng cấp Pro'));
+    } else {
+      actions.appendChild(el('button', {
+        class: `plan-badge plan-badge--${curPlan}`,
+        title: 'Bản quyền đang hoạt động — nhấn để xem chi tiết',
+        onclick: () => go('upgrade')
+      }, (curPlan === 'business' ? '🏥 ' : '⭐ ') + (curUser ? curUser.planName : 'Gói Pro')));
+    }
+    actions.appendChild(el('button', {
+      class: 'btn btn--ghost btn--sm',
+      title: 'Quản trị đơn hàng, doanh thu & tạo License Key',
+      onclick: () => go('admin')
+    }, '💰 Doanh thu'));
+    actions.appendChild(el('button', {
+      class: 'icon-btn',
+      title: curUser ? `Tài khoản: ${curUser.email}` : 'Đăng nhập / Tài khoản',
+      html: icon('user'),
+      onclick: () => VC.auth && VC.auth.showAccount()
+    }));
 
     // Nút toggle camera
     actions.appendChild(el('button', {
@@ -247,6 +276,18 @@
   async function init() {
     document.documentElement.dataset.theme = store.state.theme;
     store.state.cameraOn = true;
+
+    if (VC.auth) {
+      await VC.auth.ensureLoggedIn();
+      VC.auth.onChange(async () => {
+        try {
+          const { items } = await api.fetchAlerts({ limit: 200 });
+          store.state.alerts = items || [];
+          refreshMetrics();
+        } catch (e) { /* ignore */ }
+        render();
+      });
+    }
     try {
       await VC.camera.refreshDevices();
     } catch (e) {

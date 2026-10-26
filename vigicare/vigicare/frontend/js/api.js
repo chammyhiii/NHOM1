@@ -73,7 +73,7 @@
     const todayAlerts = alerts.filter(a => a.ts >= dayStart.getTime());
     const resolved = todayAlerts.filter(a => a.status === 'resolved').length;
     const pending = alerts.filter(a => a.status === 'pending' || a.status === 'processing').length;
-    const onlineCams = cameras.filter(c => c.online).length;
+    const onlineCams = cameras.filter(c => c.online && !c.locked).length;
 
     let risk = 'low';
     if (pending >= 3) risk = 'high';

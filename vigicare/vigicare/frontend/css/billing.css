@@ -1,0 +1,496 @@
+/* ============================================================
+   VigiCare — billing.css
+   Giao diện Đăng nhập, Bảng giá, VietQR Checkout, Quản trị & Pro Locks
+   ============================================================ */
+
+/* ---------- Auth Screen ---------- */
+.auth-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: var(--bg-0);
+  background-image:
+    radial-gradient(circle at 15% 20%, rgba(236, 72, 153, 0.28), transparent 45%),
+    radial-gradient(circle at 85% 80%, rgba(79, 172, 254, 0.28), transparent 45%);
+  overflow-y: auto;
+  transition: opacity 0.25s ease;
+}
+.auth-screen.is-leaving { opacity: 0; pointer-events: none; }
+
+.auth-wrap {
+  width: min(920px, 100%);
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  background: var(--bg-2);
+  backdrop-filter: blur(22px);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-2);
+  overflow: hidden;
+}
+@media (max-width: 760px) {
+  .auth-wrap { grid-template-columns: 1fr; }
+}
+
+.auth-pitch {
+  padding: 36px 32px;
+  background: linear-gradient(145deg, rgba(79, 172, 254, 0.14), rgba(236, 72, 153, 0.14));
+  border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.auth-pitch__logo { font-size: 44px; margin-bottom: 8px; }
+.auth-pitch h1 { margin: 0 0 8px; font-size: 26px; font-weight: 800; }
+.auth-pitch__tag { color: var(--text-dim); margin: 0 0 18px; font-size: 13.5px; line-height: 1.6; }
+.auth-pitch__list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 20px;
+  display: grid;
+  gap: 10px;
+  font-size: 13px;
+}
+.auth-pitch__price {
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--bg-4);
+  border: 1px solid var(--primary-line);
+  font-size: 12.5px;
+  color: var(--primary-2);
+}
+
+.auth-card {
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.auth-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 4px;
+  background: var(--bg-3);
+  border-radius: 12px;
+  margin-bottom: 18px;
+}
+.auth-tab {
+  height: 36px;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  transition: all var(--trans);
+}
+.auth-tab.is-active {
+  background: linear-gradient(135deg, #4facfe, #ec4899);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(236, 72, 153, 0.25);
+}
+.auth-error {
+  min-height: 18px;
+  font-size: 12.5px;
+  color: var(--danger);
+  margin: 4px 0 10px;
+}
+.auth-foot {
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+  margin: 14px 0 0;
+}
+
+/* ---------- Plan Badges & Topbar ---------- */
+.plan-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+.plan-badge--free {
+  background: rgba(100, 116, 139, 0.14);
+  color: var(--text-dim);
+}
+.plan-badge--pro {
+  background: linear-gradient(135deg, #4facfe, #ec4899);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(236, 72, 153, 0.35);
+}
+.plan-badge--business {
+  background: linear-gradient(135deg, #f59e0b, #ec4899);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
+}
+
+.upgrade-chip {
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #f59e0b, #ec4899);
+  color: #fff;
+  box-shadow: 0 6px 18px rgba(236, 72, 153, 0.32);
+  transition: transform var(--trans), box-shadow var(--trans);
+}
+.upgrade-chip:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 22px rgba(236, 72, 153, 0.45);
+}
+
+/* ---------- Billing Hero & Pricing ---------- */
+.billing-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  background: linear-gradient(135deg, rgba(79, 172, 254, 0.14), rgba(236, 72, 153, 0.14));
+}
+.billing-hero__eyebrow {
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--primary-2);
+}
+.billing-hero__title { margin: 4px 0 6px; font-size: 22px; font-weight: 800; }
+.billing-hero__desc { margin: 0; color: var(--text-dim); font-size: 13px; max-width: 620px; }
+.billing-hero__current {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+.billing-hero__label { font-size: 11.5px; color: var(--muted); }
+.billing-hero__key {
+  padding: 5px 10px;
+  border-radius: 8px;
+  background: var(--bg-4);
+  border: 1px dashed var(--primary-line);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  margin-bottom: 20px;
+}
+@media (max-width: 960px) {
+  .pricing-grid { grid-template-columns: 1fr; }
+}
+
+.price-card {
+  position: relative;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 24px 22px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-1);
+  transition: transform var(--trans), box-shadow var(--trans);
+}
+.price-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-2); }
+.price-card.is-featured {
+  border: 2px solid var(--primary-2);
+  box-shadow: 0 14px 38px rgba(236, 72, 153, 0.2);
+}
+.price-card__ribbon {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #4facfe, #ec4899);
+  color: #fff;
+}
+.price-card__icon { font-size: 30px; margin-bottom: 8px; }
+.price-card__name { font-size: 17px; font-weight: 800; }
+.price-card__tag { font-size: 12.5px; color: var(--muted); margin-bottom: 14px; }
+.price-card__price b { font-size: 26px; font-weight: 800; color: var(--primary-2); }
+.price-card__price span { font-size: 12.5px; color: var(--muted); }
+.price-card__install {
+  font-size: 12px;
+  color: var(--text-dim);
+  padding: 7px 10px;
+  border-radius: 10px;
+  background: var(--bg-3);
+  margin: 10px 0 14px;
+}
+.price-card__list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 18px;
+  flex: 1;
+  display: grid;
+  gap: 8px;
+  font-size: 13px;
+}
+.price-card__list li::before {
+  content: '✓ ';
+  color: var(--ok);
+  font-weight: 800;
+}
+
+.compare-table th.is-current,
+.compare-table td.is-current {
+  background: rgba(236, 72, 153, 0.08);
+  font-weight: 700;
+}
+
+.faq { display: grid; gap: 8px; }
+.faq__item {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+}
+.faq__item summary { cursor: pointer; font-weight: 600; font-size: 13px; }
+.faq__item p { margin: 8px 0 0; font-size: 12.5px; color: var(--text-dim); }
+
+.billing-muted { font-size: 12.5px; color: var(--muted); margin: 0 0 12px; }
+.billing-sub { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+.billing-warn {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--warn-soft);
+  color: var(--warn);
+  font-size: 12.5px;
+}
+
+/* ---------- Checkout & VietQR Modal ---------- */
+.checkout { display: grid; gap: 12px; }
+.checkout__plan {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--bg-3);
+}
+.checkout__plan-icon { font-size: 28px; }
+.checkout__plan-name { font-weight: 700; font-size: 14px; }
+.checkout__line {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+.checkout__line.is-discount { color: var(--ok); }
+.checkout__install {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  cursor: pointer;
+}
+.checkout__install input { margin-top: 4px; }
+.checkout__install-fields { gap: 8px; }
+.checkout__total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  font-size: 14px;
+}
+.checkout__total-value { font-size: 20px; color: var(--primary-2); }
+
+.pay {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+@media (max-width: 680px) {
+  .pay { grid-template-columns: 1fr; }
+}
+.pay__qr {
+  text-align: center;
+  padding: 14px;
+  border-radius: 14px;
+  background: #fff;
+  border: 1px solid var(--line);
+}
+.pay__qr img { max-width: 100%; height: auto; border-radius: 8px; }
+.pay__noqr {
+  padding: 40px 16px;
+  color: #475569;
+  font-size: 12.5px;
+}
+.pay__info { display: grid; gap: 10px; }
+.pay__row {
+  display: grid;
+  grid-template-columns: 120px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 0;
+  border-bottom: 1px dashed var(--line);
+  font-size: 13px;
+}
+.pay__content {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--primary-soft);
+  border: 1px solid var(--primary-line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 12.5px;
+}
+.pay__code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 16px;
+  color: var(--primary-2);
+  margin-right: 8px;
+}
+.pay__waiting {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--ok-soft);
+}
+.pay__spinner {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 3px solid rgba(16, 185, 129, 0.25);
+  border-top-color: var(--ok);
+  animation: vc-spin 0.9s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes vc-spin { to { transform: rotate(360deg); } }
+
+/* ---------- Upsell & Account ---------- */
+.upsell {
+  text-align: center;
+  padding: 8px 6px;
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+}
+.upsell__icon { font-size: 42px; }
+.upsell__title { font-size: 16px; font-weight: 800; }
+.upsell__desc { font-size: 13px; color: var(--text-dim); margin: 0; max-width: 360px; }
+.upsell__price {
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: var(--primary-soft);
+  color: var(--primary-2);
+  font-size: 12.5px;
+}
+
+.account-box { display: grid; gap: 10px; }
+.account-box__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+}
+
+/* ---------- Admin KPI & Bank ---------- */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+}
+@media (max-width: 980px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 560px) {
+  .kpi-grid { grid-template-columns: 1fr; }
+}
+.kpi {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.kpi__icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  background: var(--bg-3);
+  flex-shrink: 0;
+}
+.kpi__label { font-size: 12px; color: var(--muted); }
+.kpi__value { font-size: 18px; font-weight: 800; margin: 2px 0; }
+.kpi__sub { font-size: 11px; color: var(--muted); }
+
+.table tr.is-highlight { background: rgba(79, 172, 254, 0.12); }
+
+.bank-form { display: grid; gap: 8px; margin-bottom: 12px; }
+.bank-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.bank-preview img { border-radius: 10px; border: 1px solid var(--line); background: #fff; }
+
+/* ---------- Locked Camera Tile & Banner ---------- */
+.cam-tile__lock {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.76);
+  backdrop-filter: blur(6px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: center;
+  padding: 12px;
+}
+.cam-tile__lock span {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #f59e0b, #ec4899);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.pro-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.14), rgba(236, 72, 153, 0.14));
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  margin-bottom: 14px;
+  font-size: 12.5px;
+}

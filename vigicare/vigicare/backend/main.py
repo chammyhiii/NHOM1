@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -40,6 +41,8 @@ from core.config import settings
 from core.storage import storage
 from core.logger import log
 from core.emailer import send_email
+from core.accounts import accounts
+from core import caller
 from routes import stream as stream_router
 from routes import alerts as alerts_router
 from routes import cameras as cameras_router
@@ -47,6 +50,9 @@ from routes import health as health_router
 from routes import zones as zones_router
 from routes import radar as radar_router
 from routes import settings as settings_router
+from routes import auth as auth_router
+from routes import billing as billing_router
+from routes import emergency as emergency_router
 from ai.pipeline import CameraPipeline
 
 
@@ -120,6 +126,20 @@ async def lifespan(app: FastAPI):
 
             await send_email(subject, body, image_path=snapshot)
 
+        # ============================================================
+        # Gọi điện khẩn cấp tự động (chỉ gói Pro / Business)
+        # ============================================================
+        if alert["type"] in ("fall", "stroke", "zone_critical"):
+            contacts = []
+            for u in accounts.users_with_feature("emergency_call"):
+                contacts.extend(accounts.list_contacts(u["id"]))
+            if contacts:
+                msg = (
+                    f"Cảnh báo khẩn cấp từ VigiCare. Phát hiện {alert['typeLabel']} "
+                    f"tại {alert['cameraName']}. Vui lòng kiểm tra ngay."
+                )
+                asyncio.create_task(caller.call_contacts(contacts, msg, alert_type=alert["type"]))
+
         return alert
 
     pipeline = CameraPipeline(
@@ -162,6 +182,9 @@ app.include_router(health_router.router)
 app.include_router(zones_router.router)
 app.include_router(radar_router.router)
 app.include_router(settings_router.router)
+app.include_router(auth_router.router)
+app.include_router(billing_router.router)
+app.include_router(emergency_router.router)
 
 
 @app.get("/health")

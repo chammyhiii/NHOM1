@@ -1,8 +1,14 @@
-from fastapi import APIRouter, HTTPException, Query
-from fastapi.responses import FileResponse
+import csv
+import io
+import time
+from datetime import datetime
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel
 from pathlib import Path
 
+from core.auth import optional_user, plan_of, require_feature
 from core.config import settings
 from core.storage import storage
 
@@ -21,17 +27,47 @@ async def list_alerts(
     type: str | None = None,
     camera: str | None = None,
     status: str | None = None,
+    user: dict | None = Depends(optional_user),
 ):
+    # Gói Free chỉ xem được lịch sử N ngày gần nhất
+    days = plan_of(user)["history_days"]
+    since_ts = int((time.time() - days * 86400) * 1000) if days else None
     items = storage.list_alerts(
         limit=limit, offset=offset,
         alert_type=type, camera_id=camera, status=status,
+        since_ts=since_ts,
     )
-    return {"items": items, "total": len(items)}
+    return {"items": items, "total": len(items), "historyDays": days}
 
 
 @router.get("/stats")
 async def stats():
     return storage.stats()
+
+
+@router.get("/export")
+async def export_csv(_: dict = Depends(require_feature("export_csv", "Xuất báo cáo CSV"))):
+    """Xuất toàn bộ lịch sử cảnh báo ra CSV (gói Pro / Business)."""
+    status_labels = {"pending": "Chờ xử lý", "processing": "Đang xử lý",
+                     "resolved": "Đã xử lý", "dismissed": "Báo nhầm"}
+    buf = io.StringIO()
+    w = csv.writer(buf)
+    w.writerow(["ID", "Thời gian", "Loại", "Camera", "Khu vực", "Độ tin cậy", "Trạng thái", "Ghi chú"])
+    for a in storage.list_alerts(limit=100000):
+        w.writerow([
+            a["id"],
+            datetime.fromtimestamp(a["ts"] / 1000).strftime("%Y-%m-%d %H:%M:%S"),
+            a["typeLabel"], a["cameraName"], a["zone"],
+            f"{a['confidence'] * 100:.1f}%",
+            status_labels.get(a["status"], a["status"]),
+            a.get("note") or "",
+        ])
+    filename = f"vigicare-history-{datetime.now():%Y-%m-%d}.csv"
+    return Response(
+        content="\ufeff" + buf.getvalue(),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @router.get("/{alert_id}")

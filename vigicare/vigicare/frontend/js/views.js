@@ -10,6 +10,9 @@
     const latest = s.alerts[0];
     root.innerHTML = '';
 
+    // Banner gói bản quyền Pro ngay đầu trang Tổng quan
+    root.appendChild(proOverviewBanner());
+
     // Quick start banner for first-time users
     if (VC.guide && VC.guide.renderQuickStartBanner) {
       const banner = VC.guide.renderQuickStartBanner();
@@ -32,6 +35,36 @@
     root.appendChild(wrap);
 
     bindVideoControls(root);
+  }
+
+  function proOverviewBanner() {
+    const plan = (VC.auth && VC.auth.plan()) || 'free';
+    const user = VC.auth && VC.auth.user;
+    if (plan === 'free') {
+      return el('div', { class: 'pro-banner' }, [
+        el('div', {}, [
+          el('b', { text: '👑 Bạn đang dùng gói Miễn phí (Free) ' }),
+          el('span', { style: 'color:var(--text-dim)', text: '— Giới hạn 1/6 camera · Lịch sử 7 ngày · Khóa gọi người thân & xuất CSV.' })
+        ]),
+        el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [
+          el('button', { class: 'upgrade-chip', onclick: () => VC.app.go('upgrade') }, '👑 Nâng cấp Pro · 10.000đ trọn đời'),
+          el('button', { class: 'btn btn--ghost btn--sm', onclick: () => VC.app.go('upgrade') }, '🔑 Nhập License Key'),
+          el('button', { class: 'btn btn--ghost btn--sm', onclick: () => VC.app.go('admin') }, '💰 Quản trị doanh thu')
+        ])
+      ]);
+    }
+    return el('div', { class: 'pro-banner', style: 'border-color:rgba(16,185,129,0.4);background:linear-gradient(135deg,rgba(16,185,129,0.14),rgba(79,172,254,0.14))' }, [
+      el('div', {}, [
+        el('span', { class: `plan-badge plan-badge--${plan}`, style: 'margin-right:8px', text: (plan === 'business' ? '🏥 ' : '⭐ ') + (user ? user.planName : 'Gói Pro') }),
+        el('b', { text: 'Đã mở khóa bản quyền trọn đời ' }),
+        user && user.licenseKey ? el('code', { class: 'billing-hero__key', style: 'margin-left:6px', text: user.licenseKey }) : null
+      ]),
+      el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [
+        el('button', { class: 'btn btn--ghost btn--sm', onclick: () => VC.auth && VC.auth.resetToFreeDemo() }, '🔄 Đặt lại gói Free (để demo lại)'),
+        el('button', { class: 'btn btn--ghost btn--sm', onclick: () => VC.app.go('upgrade') }, '👑 Bảng giá'),
+        el('button', { class: 'btn btn--ghost btn--sm', onclick: () => VC.app.go('admin') }, '💰 Quản trị doanh thu')
+      ])
+    ]);
   }
 
   function videoCard(camId) {
@@ -408,8 +441,9 @@
       ])
     ]));
 
-    card.appendChild(el('div', { class: 'alert-actions' }, [
+    card.appendChild(el('div', { class: 'alert-actions', style: 'flex-wrap:wrap' }, [
       el('button', { class: 'btn btn--primary', 'data-act': 'detail', 'data-id': alert.id }, 'Xem chi tiết'),
+      el('button', { class: 'btn btn--danger', 'data-act': 'call', 'data-id': alert.id, title: 'Gọi điện khẩn cấp cho người thân (Pro) hoặc 115' }, '📞 Gọi khẩn cấp'),
       el('button', { class: 'btn btn--ghost', 'data-act': 'resolve', 'data-id': alert.id }, 'Đánh dấu xử lý'),
       el('button', { class: 'btn btn--flat', 'data-act': 'dismiss', 'data-id': alert.id, title: 'Báo nhầm' }, 'Báo nhầm')
     ]));
@@ -446,6 +480,11 @@
       return;
     }
 
+    if (act === 'call') {
+      await openEmergencyCallModal(alert);
+      return;
+    }
+
     if (act === 'resolve') {
       store.updateAlert(id, { status: 'resolved', resolvedAt: Date.now() });
       notify.toast({ title: 'Đã xử lý', message: `Cảnh báo ${id} đã được đánh dấu xử lý.`, type: 'ok' });
@@ -461,6 +500,61 @@
       notify.toast({ title: 'Đã đánh dấu', message: `Cảnh báo ${id} được đánh dấu là báo nhầm.`, type: 'warn' });
       VC.app.rerender();
     }
+  }
+
+  async function openEmergencyCallModal(alert) {
+    if (VC.auth && !VC.auth.can('emergencyCall')) {
+      const body = el('div', { class: 'upsell' }, [
+        el('div', { class: 'upsell__icon', text: '📞' }),
+        el('div', { class: 'upsell__title', text: 'Gọi điện khẩn cấp cho người thân' }),
+        el('p', { class: 'upsell__desc', text: 'Gói Miễn phí hỗ trợ gọi cấp cứu 115 thủ công. Nâng cấp Pro để lưu danh bạ người thân và tự động gọi khi phát hiện té ngã / đột quỵ.' }),
+        el('a', { class: 'btn btn--danger btn--block', href: 'tel:115' }, '🚨 Gọi cấp cứu 115 ngay')
+      ]);
+      const up = await notify.modal({
+        title: '📞 Gọi khẩn cấp',
+        width: 460,
+        body,
+        actions: [
+          { label: 'Đóng', value: false, class: 'btn--ghost' },
+          { label: '👑 Nâng cấp Pro', value: true, class: 'btn--primary' }
+        ]
+      });
+      if (up) VC.app.go('upgrade');
+      return;
+    }
+
+    let contacts = [];
+    try {
+      const res = await VC.auth.request('/api/emergency/contacts');
+      contacts = res.items || [];
+    } catch (e) { /* ignore */ }
+
+    const list = el('div', { style: 'display:grid;gap:8px;margin-top:8px' });
+    if (!contacts.length) {
+      list.appendChild(el('div', { class: 'billing-muted', text: 'Chưa có số người thân. Bạn có thể thêm trong Cài đặt → Danh bạ khẩn cấp.' }));
+    } else {
+      contacts.forEach(c => {
+        list.appendChild(el('div', { class: 'account-box__row' }, [
+          el('div', {}, [
+            el('b', { text: c.name + (c.relation ? ` (${c.relation})` : '') }),
+            el('div', { class: 'billing-sub table__mono', text: c.phone })
+          ]),
+          el('a', { class: 'btn btn--primary btn--sm', href: `tel:${c.phone}` }, '📞 Gọi ngay')
+        ]));
+      });
+    }
+    list.appendChild(el('a', { class: 'btn btn--danger btn--block', href: 'tel:115', style: 'margin-top:6px' }, '🚨 Gọi Cấp cứu 115'));
+
+    const v = await notify.modal({
+      title: `📞 Gọi khẩn cấp · ${alert ? alert.cameraName : ''}`,
+      width: 460,
+      body: list,
+      actions: [
+        { label: 'Đóng', value: 'close', class: 'btn--ghost' },
+        { label: 'Quản lý danh bạ', value: 'settings', class: 'btn--ghost' }
+      ]
+    });
+    if (v === 'settings') VC.app.go('settings');
   }
 
   function statsCard(m) {
@@ -605,17 +699,28 @@
     ]));
     const grid = el('div', { class: 'cam-grid' });
     s.cameras.forEach(cam => {
+      const locked = Boolean(cam.locked);
       const tile = el('div', { class: `cam-tile ${cam.id === s.activeCamera ? 'is-active' : ''}` }, [
-                el('img', { src: VC.api.streamUrl(), alt: cam.name, loading: 'lazy', onerror: "this.src='https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&q=70'" }),
+        el('img', { src: VC.api.streamUrl(), alt: cam.name, loading: 'lazy', onerror: "this.src='https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&q=70'" }),
         el('div', { class: 'cam-tile__overlay' }, [
           el('div', { class: 'cam-tile__name', text: `${cam.name} · ${cam.zone}` }),
-          el('div', { class: `cam-tile__status ${cam.online ? '' : 'is-off'}` })
+          el('div', { class: `cam-tile__status ${cam.online && !locked ? '' : 'is-off'}` })
         ]),
-        !cam.online ? el('div', {
+        locked ? el('div', { class: 'cam-tile__lock' }, [
+          el('div', { text: '🔒 Yêu cầu gói Pro / Business' }),
+          el('span', { text: '👑 Mở khóa đa camera' })
+        ]) : (!cam.online ? el('div', {
           style: 'position:absolute;inset:0;display:grid;place-items:center;background:rgba(0,0,0,0.6);color:var(--muted);font-size:12px'
-        }, 'Ngoại tuyến') : null
+        }, 'Ngoại tuyến') : null)
       ]);
       tile.addEventListener('click', () => {
+        if (locked && VC.auth) {
+          VC.auth.upsell(
+            `Mở khóa camera "${cam.name}"`,
+            'Gói Miễn phí hỗ trợ 1 camera. Nâng cấp Pro (tối đa 4 camera) hoặc Business (không giới hạn) để giám sát nhiều phòng cùng lúc.'
+          );
+          return;
+        }
         store.set({ activeCamera: cam.id });
         notify.toast({ title: 'Đã chuyển camera', message: `${cam.name} · ${cam.zone}`, type: 'info', duration: 2200 });
         VC.app.rerender();
@@ -662,6 +767,13 @@
         })
       ])
     ]));
+
+    if (VC.auth && VC.auth.historyDays()) {
+      card.appendChild(el('div', { class: 'pro-banner' }, [
+        el('span', { text: `⏳ Gói Miễn phí chỉ hiển thị lịch sử ${VC.auth.historyDays()} ngày gần nhất. Nâng cấp Pro để lưu trữ không giới hạn & xuất báo cáo CSV.` }),
+        el('button', { class: 'btn btn--primary btn--sm', onclick: () => VC.app.go('upgrade') }, '👑 Nâng cấp Pro')
+      ]));
+    }
 
     const f = s.filters;
     const filters = el('div', { class: 'filters' });
@@ -776,6 +888,10 @@
   }
 
   function exportCSV() {
+    if (VC.auth && !VC.auth.can('exportCsv')) {
+      VC.auth.upsell('Xuất báo cáo CSV', 'Tính năng xuất lịch sử cảnh báo ra file Excel / CSV dành cho gói Pro và Business.');
+      return;
+    }
     const rows = store.filteredAlerts();
     if (!rows.length) {
       notify.toast({ title: 'Không có dữ liệu', message: 'Không có cảnh báo nào để xuất.', type: 'warn' });
@@ -1127,18 +1243,101 @@ grad.addColorStop(1, color + '00');
     const secCam = el('div', { class: 'settings-section' });
     secCam.appendChild(el('div', { class: 'settings-section__title', text: 'Camera' }));
     s.cameras.forEach(cam => {
+      const locked = Boolean(cam.locked);
       secCam.appendChild(settingRow({
-        title: `${cam.name} · ${cam.zone}`,
-        desc: `${cam.id.toUpperCase()} — ${cam.online ? `Đang hoạt động · ${cam.fps} FPS` : 'Ngoại tuyến'}`,
-        control: switchControl(cam.online, v => {
-          cam.online = v;
-          cam.fps = v ? 30 : 0;
-          notify.toast({ title: 'Đã cập nhật', message: `${cam.name} → ${v ? 'Bật' : 'Tắt'}`, type: 'ok', duration: 1800 });
-          VC.app.rerender();
-        })
+        title: `${cam.name} · ${cam.zone}` + (locked ? ' 🔒' : ''),
+        desc: locked
+          ? `${cam.id.toUpperCase()} — Yêu cầu gói Pro (4 camera) hoặc Business (không giới hạn)`
+          : `${cam.id.toUpperCase()} — ${cam.online ? `Đang hoạt động · ${cam.fps} FPS` : 'Ngoại tuyến'}`,
+        control: locked
+          ? el('button', { class: 'btn btn--ghost btn--sm', onclick: () => VC.app.go('upgrade') }, '👑 Mở khóa')
+          : switchControl(cam.online, v => {
+              cam.online = v;
+              cam.fps = v ? 30 : 0;
+              notify.toast({ title: 'Đã cập nhật', message: `${cam.name} → ${v ? 'Bật' : 'Tắt'}`, type: 'ok', duration: 1800 });
+              VC.app.rerender();
+            })
       }));
     });
     card.appendChild(secCam);
+
+    // ========== SECTION: EMERGENCY CONTACTS (PRO) ==========
+    const secCall = el('div', { class: 'settings-section' });
+    secCall.appendChild(el('div', { class: 'settings-section__title', text: 'Danh bạ gọi khẩn cấp (Pro / Business)' }));
+    if (VC.auth && !VC.auth.can('emergencyCall')) {
+      secCall.appendChild(el('div', { class: 'pro-banner' }, [
+        el('span', { text: '🔒 Tự động gọi điện cho người thân khi phát hiện té ngã / đột quỵ là tính năng của gói Pro & Business.' }),
+        el('button', { class: 'btn btn--primary btn--sm', onclick: () => VC.app.go('upgrade') }, '👑 Mở khóa ngay')
+      ]));
+    } else if (VC.auth) {
+      const listWrap = el('div', { style: 'margin-bottom:10px' });
+      const nameIn = el('input', { class: 'input', placeholder: 'Tên người thân (vd: Con trai Minh)', style: 'flex:1;min-width:150px' });
+      const phoneIn = el('input', { class: 'input', placeholder: 'Số điện thoại (09xx...)', style: 'width:160px' });
+      const relIn = el('input', { class: 'input', placeholder: 'Quan hệ (Con, Bác sĩ…)', style: 'width:150px' });
+      const addBtn = el('button', { class: 'btn btn--primary btn--sm' }, '+ Thêm số');
+      const testBtn = el('button', { class: 'btn btn--ghost btn--sm' }, '📞 Gọi thử');
+
+      const loadContacts = async () => {
+        listWrap.innerHTML = '';
+        try {
+          const { items } = await VC.auth.request('/api/emergency/contacts');
+          if (!items.length) {
+            listWrap.appendChild(el('div', { class: 'billing-muted', text: 'Chưa có số điện thoại khẩn cấp nào.' }));
+          } else {
+            items.forEach(c => {
+              listWrap.appendChild(settingRow({
+                title: `${c.name}${c.relation ? ' · ' + c.relation : ''}`,
+                desc: c.phone,
+                control: el('div', { style: 'display:flex;gap:6px' }, [
+                  el('a', { class: 'btn btn--ghost btn--sm', href: `tel:${c.phone}` }, '📞 Gọi'),
+                  el('button', {
+                    class: 'btn btn--flat btn--sm',
+                    onclick: async () => {
+                      await VC.auth.request(`/api/emergency/contacts/${c.id}`, { method: 'DELETE' });
+                      loadContacts();
+                    }
+                  }, 'Xóa')
+                ])
+              }));
+            });
+          }
+        } catch (err) {
+          listWrap.appendChild(el('div', { class: 'billing-muted', text: err.message }));
+        }
+      };
+
+      addBtn.addEventListener('click', async () => {
+        try {
+          await VC.auth.request('/api/emergency/contacts', {
+            method: 'POST',
+            body: { name: nameIn.value, phone: phoneIn.value, relation: relIn.value }
+          });
+          nameIn.value = ''; phoneIn.value = ''; relIn.value = '';
+          notify.toast({ title: 'Đã thêm liên hệ khẩn cấp', type: 'ok' });
+          loadContacts();
+        } catch (err) {
+          notify.toast({ title: 'Không thể thêm', message: err.message, type: 'danger' });
+        }
+      });
+
+      testBtn.addEventListener('click', async () => {
+        try {
+          const res = await VC.auth.request('/api/emergency/test-call', { method: 'POST' });
+          notify.toast({
+            title: res.autoCall ? 'Đã thực hiện cuộc gọi thử' : 'Chế độ gọi 1 chạm',
+            message: res.autoCall ? `Đã gọi ${res.called} số.` : 'Twilio chưa cấu hình — dùng nút 📞 Gọi trực tiếp trên trình duyệt/điện thoại.',
+            type: 'info'
+          });
+        } catch (err) {
+          notify.toast({ title: 'Lỗi', message: err.message, type: 'danger' });
+        }
+      });
+
+      secCall.appendChild(listWrap);
+      secCall.appendChild(el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:8px' }, [nameIn, phoneIn, relIn, addBtn, testBtn]));
+      loadContacts();
+    }
+    card.appendChild(secCall);
 
     const secData = el('div', { class: 'settings-section' });
     secData.appendChild(el('div', { class: 'settings-section__title', text: 'Dữ liệu & Bảo mật' }));

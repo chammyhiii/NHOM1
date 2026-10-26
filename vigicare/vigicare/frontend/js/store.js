@@ -64,7 +64,7 @@
   }
 
   function activeCameras() {
-    return state.cameras.filter(c => c.online).length;
+    return state.cameras.filter(c => c.online && !c.locked).length;
   }
 
   function filteredAlerts() {

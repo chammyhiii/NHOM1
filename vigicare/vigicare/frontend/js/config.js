@@ -39,6 +39,7 @@
     { id: 'radar',     label: 'Radar WiFi',   icon: 'camera' },
     { id: 'history',   label: 'Lịch sử',      icon: 'clock' },
     { id: 'analytics', label: 'Phân tích',    icon: 'chart' },
+    { id: 'upgrade',   label: 'Nâng cấp Pro', icon: 'crown' },
     { id: 'settings',  label: 'Cài đặt',      icon: 'settings' }
   ];
 
@@ -65,12 +66,15 @@
     shield:   '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
     activity: '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',
     refresh:  '<path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>',
-    help:     '<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>'
+    help:     '<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+    crown:    '<path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/>',
+    phone:    '<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>',
+    lock:     '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>'
   };
 
   const KEYBINDS = {
     '1': 'overview', '2': 'live', '3': 'zones', '4': 'history',
-    '5': 'analytics', '6': 'settings',
+    '5': 'analytics', '6': 'upgrade', '7': 'settings',
     's': 'toggle-sound', 't': 'toggle-theme', 'r': 'refresh',
     '?': 'help', 'h': 'help'
   };

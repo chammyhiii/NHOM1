@@ -61,6 +61,21 @@ class Settings(BaseSettings):
     email_on_zone_dwell: bool = True
     email_on_zone_critical: bool = True
 
+    # ---------- Kinh doanh / License ----------
+    # Email tài khoản quản trị (duyệt đơn, tạo license). Nếu để trống,
+    # tài khoản ĐĂNG KÝ ĐẦU TIÊN sẽ tự động trở thành admin.
+    admin_email: str = ""
+    # Tài khoản nhận tiền VietQR (có thể sửa trong trang Quản trị)
+    bank_id: str = "970422"                      # Mã BIN ngân hàng: 970422 (MB Bank)
+    bank_account: str = "687269944224"           # Số tài khoản MB Bank
+    bank_account_name: str = "VO THI NGOC TRAM"  # Chủ tài khoản: Võ Thị Ngọc Trâm
+
+    # ---------- Gọi điện khẩn cấp tự động (tùy chọn, Twilio) ----------
+    twilio_sid: str = ""
+    twilio_token: str = ""
+    twilio_from: str = ""        # Số điện thoại Twilio, dạng +1xxxxxxxxxx
+    emergency_call_cooldown: int = 120
+
     # ---------- Debug modes ----------
     mock_mode: bool = False
     mock_ai: bool = False

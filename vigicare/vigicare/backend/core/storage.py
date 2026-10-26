@@ -180,9 +180,13 @@ class Storage:
         alert_type: Optional[str] = None,
         camera_id: Optional[str] = None,
         status: Optional[str] = None,
+        since_ts: Optional[int] = None,
     ) -> list[dict]:
         q = "SELECT * FROM alerts WHERE 1=1"
         params: list = []
+        if since_ts:
+            q += " AND ts >= ?"
+            params.append(since_ts)
         if alert_type and alert_type != "all":
             q += " AND type = ?"
             params.append(alert_type)

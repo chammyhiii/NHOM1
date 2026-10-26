@@ -1,4 +1,6 @@
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
+
+from core.auth import optional_user, plan_of
 
 router = APIRouter(prefix="/api/cameras", tags=["cameras"])
 
@@ -14,8 +16,13 @@ _CAMERAS = [
 
 
 @router.get("")
-async def list_cameras():
-    return {"items": _CAMERAS}
+async def list_cameras(user: dict | None = Depends(optional_user)):
+    limit = plan_of(user)["max_cameras"]
+    items = [
+        {**c, "locked": limit is not None and i >= limit}
+        for i, c in enumerate(_CAMERAS)
+    ]
+    return {"items": items, "maxCameras": limit}
 
 
 @router.get("/{camera_id}")
