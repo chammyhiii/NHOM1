@@ -144,8 +144,8 @@ async def lifespan(app: FastAPI):
 
     pipeline = CameraPipeline(
         camera_id="cam-01",
-        camera_name="Phòng khách",
-        zone="Tầng 1",
+        camera_name="Bờ Bắc · Vách đá dựng đứng",
+        zone="Cụm Hồ Chính ĐHQG",
         on_alert=on_alert,
         bus=stream_router.bus,
         camera_index=settings.camera_index,

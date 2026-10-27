@@ -2,50 +2,86 @@
   'use strict';
 
   const APP = {
-    name: 'VigiCare',
-    tagline: 'Gi\u00e1m s\u00e1t an to\u00e0n ng\u01b0\u1eddi cao tu\u1ed5i 24/7',
-    version: '1.0.0',
-    build: '2026.04'
+    name: 'SafeZone Hồ Đá · ĐHQG-HCM',
+    tagline: 'Hệ thống Cảnh báo An toàn Hồ Đá — Ứng dụng Thị giác Máy tính & Camera AI tại Khu đô thị ĐHQG TP.HCM',
+    version: '2.0.0',
+    build: '2026.10'
   };
 
+  // Hình minh họa cảnh quan Hồ Đá ĐHQG-HCM (vách đá dựng đứng + lòng hồ sâu + hàng rào cảnh báo)
+  const LAKE_FALLBACK_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720">
+    <defs>
+      <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#0f293a"/>
+        <stop offset="55%" stop-color="#164e63"/>
+        <stop offset="100%" stop-color="#0e7490"/>
+      </linearGradient>
+      <linearGradient id="water" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#0284c7"/>
+        <stop offset="45%" stop-color="#0369a1"/>
+        <stop offset="100%" stop-color="#082f49"/>
+      </linearGradient>
+      <linearGradient id="cliff" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#475569"/>
+        <stop offset="100%" stop-color="#1e293b"/>
+      </linearGradient>
+    </defs>
+    <rect width="1280" height="410" fill="url(#sky)"/>
+    <polygon points="0,390 190,220 350,280 530,210 740,300 940,225 1130,275 1280,210 1280,415 0,415" fill="url(#cliff)"/>
+    <polygon points="0,410 260,360 470,395 790,370 1050,395 1280,365 1280,430 0,430" fill="#334155"/>
+    <rect y="405" width="1280" height="315" fill="url(#water)"/>
+    <path d="M80 470 Q320 455 560 470 T1040 468" stroke="rgba(255,255,255,0.18)" stroke-width="2" fill="none"/>
+    <path d="M180 545 Q460 530 760 548 T1180 540" stroke="rgba(255,255,255,0.14)" stroke-width="2" fill="none"/>
+    <polygon points="90,360 440,345 500,455 70,455" fill="rgba(225,29,72,0.22)" stroke="#f43f5e" stroke-width="3" stroke-dasharray="10,6"/>
+    <text x="115" y="388" fill="#fecdd3" font-family="Inter,Arial,sans-serif" font-size="19" font-weight="700">⚠ VÙNG CẤM: VÁCH ĐÁ DỰNG ĐỨNG · MỰC NƯỚC SÂU &gt;30M</text>
+    <text x="640" y="645" text-anchor="middle" fill="#e0f2fe" font-family="Inter,Arial,sans-serif" font-size="22" font-weight="700">TRẠM CAMERA AI GIÁM SÁT AN TOÀN HỒ ĐÁ — KHU ĐÔ THỊ ĐHQG TP.HCM</text>
+    <text x="640" y="678" text-anchor="middle" fill="#7dd3fc" font-family="Inter,Arial,sans-serif" font-size="16">Nhấn "Bật camera thực tế" ở góc trên khung hình để kết nối trực tiếp với Camera / Webcam</text>
+  </svg>`;
+  const LAKE_FALLBACK_IMG = 'data:image/svg+xml;utf8,' + encodeURIComponent(LAKE_FALLBACK_SVG);
+
   const CAMERAS = [
-    { id: 'cam-01', name: 'Phòng khách', zone: 'Tầng 1', online: true,  fps: 30, target: true },
-    { id: 'cam-02', name: 'Phòng ngủ',   zone: 'Tầng 1', online: true,  fps: 28, target: true },
-    { id: 'cam-03', name: 'Hành lang',   zone: 'Tầng 2', online: true,  fps: 30, target: false },
-    { id: 'cam-04', name: 'Nhà bếp',     zone: 'Tầng 1', online: false, fps: 0,  target: false },
-    { id: 'cam-05', name: 'Sân trước',   zone: 'Ngoài',  online: true,  fps: 25, target: false },
-    { id: 'cam-06', name: 'Cầu thang',   zone: 'Tầng 2', online: true,  fps: 30, target: true }
+    { id: 'cam-01', name: 'Bờ Bắc · Vách đá dựng đứng', zone: 'Cụm Hồ Chính ĐHQG',     online: true,  fps: 30, target: true },
+    { id: 'cam-02', name: 'Bờ Đông · Đường Nguyễn Du',  zone: 'Ven đường Nguyễn Du',   online: true,  fps: 28, target: true },
+    { id: 'cam-03', name: 'Mỏm đá Tử thần · Bờ Tây',   zone: 'Vách đá sâu >30m',      online: true,  fps: 30, target: true },
+    { id: 'cam-04', name: 'Lối mòn Hàng rào Khu A',     zone: 'Giáp KTX Khu A',        online: false, fps: 0,  target: false },
+    { id: 'cam-05', name: 'Bờ Nam · Giáp Viện CNSH',    zone: 'Đường Marie Curie',     online: true,  fps: 25, target: false },
+    { id: 'cam-06', name: 'Chốt Bảo vệ Ống Nước Thô',   zone: 'Cổng tuần tra Tây Nam', online: true,  fps: 30, target: true }
   ];
 
   const ALERT_TYPES = {
-    fall:     { id: 'fall',     label: 'Té ngã',         color: 'danger', icon: '⚠' },
-    stroke:   { id: 'stroke',   label: 'Nghi đột quỵ',    color: 'danger', icon: '⚕' },
-    abnormal: { id: 'abnormal', label: 'Bất thường',      color: 'warn',   icon: '◐' },
-    inactive: { id: 'inactive', label: 'Không hoạt động', color: 'warn',   icon: '⏸' },
-    resolved: { id: 'resolved', label: 'Bình thường',     color: 'ok',     icon: '✓' }
+    fall:          { id: 'fall',          label: 'Trượt ngã sát mép Hồ Đá',     color: 'danger', icon: '🚨' },
+    stroke:        { id: 'stroke',        label: 'Bất tỉnh / Đuối sức ven hồ',  color: 'danger', icon: '🆘' },
+    abnormal:      { id: 'abnormal',      label: 'Vượt rào / Leo mỏm đá',       color: 'warn',   icon: '⚠️' },
+    inactive:      { id: 'inactive',      label: 'Đứng lâu sát vách đá Hồ Đá',  color: 'warn',   icon: '⏱️' },
+    zone_enter:    { id: 'zone_enter',    label: 'Xâm nhập vùng cấm bờ hồ',     color: 'warn',   icon: '🚧' },
+    zone_dwell:    { id: 'zone_dwell',    label: 'Nán lại lâu ở mép vực Hồ Đá', color: 'danger', icon: '⚠️' },
+    zone_critical: { id: 'zone_critical', label: 'KHẨN CẤP — Sát vực nước sâu', color: 'danger', icon: '🚨' },
+    zone_exit:     { id: 'zone_exit',     label: 'Đã rời vùng cấm bờ hồ',       color: 'ok',     icon: '✓' },
+    resolved:      { id: 'resolved',      label: 'An toàn / Đã rời bờ hồ',      color: 'ok',     icon: '✓' }
   };
 
   const STATUS = {
-    pending:    { id: 'pending',    label: 'Chờ xử lý',  color: 'warn' },
-    processing: { id: 'processing', label: 'Đang xử lý', color: 'warn' },
-    resolved:   { id: 'resolved',   label: 'Đã xử lý',   color: 'ok' },
-    dismissed:  { id: 'dismissed',  label: 'Báo nhầm',   color: 'muted' }
+    pending:    { id: 'pending',    label: 'Chờ ứng cứu',  color: 'warn' },
+    processing: { id: 'processing', label: 'Đang tuần tra', color: 'warn' },
+    resolved:   { id: 'resolved',   label: 'Đã xử lý',     color: 'ok' },
+    dismissed:  { id: 'dismissed',  label: 'Báo nhầm',     color: 'muted' }
   };
 
   const NAV = [
-    { id: 'overview',  label: 'Tổng quan',    icon: 'home' },
-    { id: 'zones',     label: 'Vùng cấm',     icon: 'shield' },
-    { id: 'map3d',     label: 'Bản đồ 3D',    icon: 'activity' },
-    { id: 'radar',     label: 'Radar WiFi',   icon: 'camera' },
-    { id: 'history',   label: 'Lịch sử',      icon: 'clock' },
-    { id: 'analytics', label: 'Phân tích',    icon: 'chart' },
-    { id: 'upgrade',   label: 'Nâng cấp Pro', icon: 'crown' },
-    { id: 'settings',  label: 'Cài đặt',      icon: 'settings' }
+    { id: 'overview',  label: 'Giám sát Hồ Đá',     icon: 'camera' },
+    { id: 'zones',     label: 'Vùng cấm bờ hồ',     icon: 'shield' },
+    { id: 'map3d',     label: 'Bản đồ 3D Hồ Đá',    icon: 'activity' },
+    { id: 'radar',     label: 'Radar Quanh Hồ',     icon: 'radar' },
+    { id: 'history',   label: 'Nhật ký sự cố',      icon: 'clock' },
+    { id: 'analytics', label: 'Thống kê bờ hồ',     icon: 'chart' },
+    { id: 'upgrade',   label: 'Thương mại & Pro',   icon: 'crown' },
+    { id: 'settings',  label: 'Cài đặt',            icon: 'settings' }
   ];
 
   const ICONS = {
     home:     '<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
     camera:   '<polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>',
+    radar:    '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/><line x1="12" y1="12" x2="19" y2="5"/>',
     clock:    '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
     chart:    '<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
     settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
@@ -73,8 +109,8 @@
   };
 
   const KEYBINDS = {
-    '1': 'overview', '2': 'live', '3': 'zones', '4': 'history',
-    '5': 'analytics', '6': 'upgrade', '7': 'settings',
+    '1': 'overview', '2': 'zones', '3': 'map3d', '4': 'radar',
+    '5': 'history', '6': 'analytics', '7': 'upgrade', '8': 'settings',
     's': 'toggle-sound', 't': 'toggle-theme', 'r': 'refresh',
     '?': 'help', 'h': 'help'
   };
@@ -96,6 +132,6 @@
 
   global.VC = global.VC || {};
   Object.assign(global.VC, {
-    APP, CAMERAS, ALERT_TYPES, STATUS, NAV, ICONS, KEYBINDS, THRESHOLDS, STORAGE
+    APP, CAMERAS, ALERT_TYPES, STATUS, NAV, ICONS, KEYBINDS, THRESHOLDS, STORAGE, LAKE_FALLBACK_IMG
   });
 })(window);

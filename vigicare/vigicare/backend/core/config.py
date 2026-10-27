@@ -13,7 +13,7 @@ class Settings(BaseSettings):
         protected_namespaces=("settings_",),
     )
     # ---------- App ----------
-    app_name: str = "VigiCare"
+    app_name: str = "SafeZone Hồ Đá · ĐHQG-HCM"
     app_version: str = "1.0.0"
     debug: bool = True
 

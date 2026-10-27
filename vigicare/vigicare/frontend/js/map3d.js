@@ -100,16 +100,59 @@
     return inside;
   }
 
+  function focusCam(px, py, pz, tx, ty, tz) {
+    if (!camera || !controls) return;
+    camera.position.set(px, py, pz);
+    controls.target.set(tx, ty, tz);
+    controls.update();
+  }
+
   function renderMap3D(root) {
     root.innerHTML = '';
+
+    const deck = el('div', { class: 'command-deck' });
+
+    const sideCard = el('div', { class: 'card' });
+    sideCard.appendChild(el('div', { class: 'card__head' }, [
+      el('div', { class: 'card__title' }, [
+        el('div', { class: 'ico', html: icon('map') }),
+        'Tọa độ & Góc nhìn 3D Hồ Đá'
+      ]),
+      el('span', { class: 'badge badge--ok' }, 'GIS 3D')
+    ]));
+
+    sideCard.appendChild(el('p', {
+      style: 'font-size:12px;color:var(--text-dim);margin-bottom:12px;line-height:1.55',
+      text: 'Mô hình không gian 3 chiều khu vực Hồ Đá Làng Đại học ĐHQG-HCM, tích hợp vị trí các trạm Camera AI và vùng cấm vách đá dựng đứng.'
+    }));
+
+    const presetList = el('div', { style: 'display:grid;gap:8px;margin-bottom:14px' }, [
+      el('button', { class: 'btn btn--primary btn--sm', style: 'justify-content:flex-start', onclick: () => focusCam(200, 180, 260, 0, 0, 0) }, '🌊 Toàn cảnh Cụm Hồ Đá ĐHQG-HCM'),
+      el('button', { class: 'btn btn--ghost btn--sm', style: 'justify-content:flex-start', onclick: () => focusCam(0, 85, -170, 0, 5, -40) }, '🪨 Bờ Bắc · Vách đá dựng đứng & Đ. Nguyễn Du'),
+      el('button', { class: 'btn btn--ghost btn--sm', style: 'justify-content:flex-start', onclick: () => focusCam(190, 90, 110, 60, 5, 40) }, '📹 Bờ Đông · Nhà khách ĐHQG & Đ. Marie Curie'),
+      el('button', { class: 'btn btn--ghost btn--sm', style: 'justify-content:flex-start', onclick: () => focusCam(-180, 95, 160, -40, 5, 50) }, '🛡️ Bờ Tây - Nam · Viện CNSH & Ống Nước Thô')
+    ]);
+    sideCard.appendChild(presetList);
+
+    const legendBox = el('div', {
+      style: 'background:var(--bg-2);border:1px solid var(--border);padding:12px;border-radius:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px'
+    }, [
+      legendItem('#0a4a8a', 'Lòng Hồ Đá sâu'),
+      legendItem('#8a7a5a', 'Vách đá bờ hồ'),
+      legendItem('#ef4444', 'Vùng cấm AI'),
+      legendItem('#06b6d4', 'Trạm Camera AI'),
+      legendItem('#a82020', 'Cơ sở ĐHQG-HCM'),
+      legendItem('#2d5a2d', 'Rừng cây ven hồ')
+    ]);
+    sideCard.appendChild(legendBox);
 
     const card = el('div', { class: 'card' });
     card.appendChild(el('div', { class: 'card__head' }, [
       el('div', { class: 'card__title' }, [
         el('div', { class: 'ico', html: icon('activity') }),
-        'Bản đồ 3D Hồ đá ĐHQG'
+        'Mô phỏng Không gian 3D Địa hình Hồ Đá — Khu đô thị ĐHQG TP.HCM'
       ]),
-      el('span', { class: 'badge badge--primary' }, 'Realistic')
+      el('span', { class: 'badge badge--primary' }, 'Xoay / Thu phóng bằng chuột')
     ]));
 
     const stage = el('div', {
@@ -118,19 +161,9 @@
     });
     card.appendChild(stage);
 
-    const legend = el('div', {
-      style: 'position:absolute;bottom:12px;left:12px;background:rgba(0,0,0,0.65);padding:8px 12px;border-radius:8px;font-size:11px;color:#fff;display:flex;gap:12px;flex-wrap:wrap;pointer-events:none'
-    }, [
-      legendItem('#0a4a8a', 'Hồ đá'),
-      legendItem('#8a7a5a', 'Bờ đá'),
-      legendItem('#ef4444', 'Vùng cấm'),
-      legendItem('#06b6d4', 'Camera'),
-      legendItem('#a82020', 'Nhà'),
-      legendItem('#2d5a2d', 'Cây'),
-    ]);
-    stage.appendChild(legend);
-
-    root.appendChild(card);
+    deck.appendChild(sideCard);
+    deck.appendChild(card);
+    root.appendChild(deck);
 
     requestAnimationFrame(() => {
       init3D(stage);

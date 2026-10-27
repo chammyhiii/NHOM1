@@ -17,8 +17,8 @@ PLANS: dict[str, dict] = {
     "free": {
         "id": "free",
         "rank": 0,
-        "name": "Miễn phí",
-        "tagline": "Dùng thử cho 1 phòng",
+        "name": "Miễn phí · Điểm Trực Đơn",
+        "tagline": "Trải nghiệm AI giám sát cho 1 trạm camera bờ hồ",
         "price": 0,
         "install_fee": 0,
         "max_cameras": 1,
@@ -27,10 +27,10 @@ PLANS: dict[str, dict] = {
         "emergency_call": False,
         "max_contacts": 0,
         "highlights": [
-            "1 camera giám sát",
-            "Phát hiện té ngã & đột quỵ bằng AI",
-            "Lưu lịch sử 7 ngày",
-            "Gọi cấp cứu 115 thủ công",
+            "1 trạm camera AI (vùng cấm bờ hồ & phát hiện trượt ngã)",
+            "Cảnh báo âm thanh & còi hú tại chỗ",
+            "Lưu nhật ký xâm nhập 7 ngày",
+            "Gọi khẩn cấp Đội Bảo vệ / 115 thủ công",
         ],
     },
     "pro": {

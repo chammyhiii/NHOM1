@@ -70,7 +70,7 @@ async def test_call(user: dict = Depends(_pro)):
         return {"autoCall": False, "called": 0}
     n = await caller.call_contacts(
         contacts[:1],
-        "Đây là cuộc gọi thử nghiệm từ hệ thống giám sát VigiCare.",
+        "Đây là cuộc gọi thử nghiệm từ Hệ thống Cảnh báo An toàn Hồ Đá ĐHQG TP.HCM.",
         respect_cooldown=False,
     )
     return {"autoCall": True, "called": n}

@@ -29,7 +29,6 @@ async def list_alerts(
     status: str | None = None,
     user: dict | None = Depends(optional_user),
 ):
-    # Gói Free chỉ xem được lịch sử N ngày gần nhất
     days = plan_of(user)["history_days"]
     since_ts = int((time.time() - days * 86400) * 1000) if days else None
     items = storage.list_alerts(
@@ -47,12 +46,12 @@ async def stats():
 
 @router.get("/export")
 async def export_csv(_: dict = Depends(require_feature("export_csv", "Xuất báo cáo CSV"))):
-    """Xuất toàn bộ lịch sử cảnh báo ra CSV (gói Pro / Business)."""
-    status_labels = {"pending": "Chờ xử lý", "processing": "Đang xử lý",
+    """Xuất toàn bộ lịch sử cảnh báo Hồ Đá ra CSV (gói Pro / Business)."""
+    status_labels = {"pending": "Chờ ứng cứu", "processing": "Đang xử lý",
                      "resolved": "Đã xử lý", "dismissed": "Báo nhầm"}
     buf = io.StringIO()
     w = csv.writer(buf)
-    w.writerow(["ID", "Thời gian", "Loại", "Camera", "Khu vực", "Độ tin cậy", "Trạng thái", "Ghi chú"])
+    w.writerow(["ID", "Thời gian", "Loại sự cố", "Trạm Camera Hồ Đá", "Khu vực", "Độ tin cậy", "Trạng thái", "Ghi chú"])
     for a in storage.list_alerts(limit=100000):
         w.writerow([
             a["id"],
@@ -62,7 +61,7 @@ async def export_csv(_: dict = Depends(require_feature("export_csv", "Xuất bá
             status_labels.get(a["status"], a["status"]),
             a.get("note") or "",
         ])
-    filename = f"vigicare-history-{datetime.now():%Y-%m-%d}.csv"
+    filename = f"safezone-hoda-history-{datetime.now():%Y-%m-%d}.csv"
     return Response(
         content="\ufeff" + buf.getvalue(),
         media_type="text/csv; charset=utf-8",
@@ -119,16 +118,18 @@ async def get_snapshot(alert_id: str):
     if not p.exists():
         raise HTTPException(404, "File không tồn tại")
     return FileResponse(p, media_type="image/jpeg")
+
+
 @router.post("/test-email")
 async def test_email():
     """Route test — gửi 1 email thử để kiểm tra cấu hình."""
     from core.emailer import send_email
     from datetime import datetime
 
-    subject = "🛡️ VigiCare — Email thử nghiệm"
+    subject = "🌊 SafeZone Hồ Đá ĐHQG-HCM — Email thử nghiệm"
     body = f"""
-    <h3 style="color:#10b981">✅ Cấu hình email thành công!</h3>
-    <p>Nếu bạn nhận được email này, hệ thống VigiCare đã sẵn sàng gửi cảnh báo.</p>
+    <h3 style="color:#0d9488">✅ Cấu hình email thành công!</h3>
+    <p>Hệ thống Cảnh báo An toàn Hồ Đá — Khu đô thị ĐHQG TP.HCM đã sẵn sàng gửi cảnh báo tới Chốt Bảo vệ.</p>
     <p><b>🕐 Thời gian test:</b> {datetime.now().strftime('%H:%M:%S %d/%m/%Y')}</p>
     """
     ok = await send_email(subject, body)

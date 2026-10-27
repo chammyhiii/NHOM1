@@ -97,14 +97,14 @@ CREATE INDEX IF NOT EXISTS idx_wifi_last_seen ON wifi_devices(last_seen_ts DESC)
 
 
 ALERT_LABELS = {
-    "fall":          {"label": "Té ngã",                "severity": "danger"},
-    "stroke":        {"label": "Nghi đột quỵ",           "severity": "danger"},
-    "abnormal":      {"label": "Bất thường",             "severity": "warn"},
-    "inactive":      {"label": "Không hoạt động",        "severity": "warn"},
-    "zone_enter":    {"label": "Xâm nhập vùng cấm",      "severity": "warn"},
-    "zone_dwell":    {"label": "Đứng lâu trong vùng cấm", "severity": "danger"},
-    "zone_critical": {"label": "KHẨN CẤP — Vùng cấm",    "severity": "danger"},
-    "zone_exit":     {"label": "Đã rời vùng cấm",        "severity": "ok"},
+    "fall":          {"label": "Trượt ngã sát mép Hồ Đá",        "severity": "danger"},
+    "stroke":        {"label": "Bất tỉnh / Đuối sức ven hồ",     "severity": "danger"},
+    "abnormal":      {"label": "Vượt rào / Leo mỏm đá",          "severity": "warn"},
+    "inactive":      {"label": "Đứng lâu sát vách đá Hồ Đá",     "severity": "warn"},
+    "zone_enter":    {"label": "Xâm nhập vùng cấm bờ hồ",        "severity": "warn"},
+    "zone_dwell":    {"label": "Nán lại lâu ở mép vực Hồ Đá",    "severity": "danger"},
+    "zone_critical": {"label": "KHẨN CẤP — Sát vực nước sâu",    "severity": "danger"},
+    "zone_exit":     {"label": "Đã rời vùng cấm bờ hồ",          "severity": "ok"},
 }
 
 

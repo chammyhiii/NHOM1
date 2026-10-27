@@ -1,6 +1,6 @@
 /* ============================================================
-   SafeZone-HD — zones.js
-   Quản lý vùng cấm: vẽ polygon, lưu, xóa
+   SafeZone Hồ Đá · ĐHQG-HCM — zones.js
+   Thiết lập & Quản lý Vùng Cấm Bờ Hồ Đá (Polygon Geofencing)
    ============================================================ */
 (function (VC) {
   'use strict';
@@ -8,17 +8,14 @@
   const { utils, notify } = VC;
   const { $, el, icon, escape } = utils;
 
-  // ---- State ----
-  let zones = [];                     // Danh sách vùng từ API
-  let isDrawing = false;              // Đang vẽ polygon?
-  let currentPoints = [];             // Các điểm đang vẽ [[x,y],...]
-  let videoEl = null;                 // Thẻ <video> (thực tế là <img> MJPEG)
-  let canvasEl = null;                // Canvas overlay
+  let zones = [];
+  let isDrawing = false;
+  let currentPoints = [];
+  let videoEl = null;
+  let canvasEl = null;
   let ctx = null;
 
-  // ---- Render trang ----
   function renderZones(root) {
-    // Reset state khi render lại — tránh dirty state từ lần trước
     isDrawing = false;
     currentPoints = [];
     videoEl = null;
@@ -26,48 +23,47 @@
     ctx = null;
     root.innerHTML = '';
 
-    const wrap = el('div', { class: 'grid-2' });
+    // Reordered layout (.command-deck): Left 380px = Danh sách vùng cấm bờ hồ + Form cấu hình; Right Main Stage = Khung vẽ đa giác trên Camera Hồ Đá
+    const wrap = el('div', { class: 'command-deck' });
 
-    // === Cột trái: Video + Canvas overlay ===
     const left = el('div');
-    left.appendChild(videoCard());
+    left.appendChild(zoneListCard());
+    left.appendChild(zoneFormCard());
     wrap.appendChild(left);
 
-    // === Cột phải: Danh sách vùng ===
     const right = el('div');
-    right.appendChild(zoneListCard());
-    right.appendChild(zoneFormCard());
+    right.appendChild(videoCard());
     wrap.appendChild(right);
 
     root.appendChild(wrap);
 
-    // Load danh sách vùng sau khi DOM đã render
     requestAnimationFrame(() => {
       initCanvas();
       loadZones();
     });
   }
 
-  // ---- Card video + canvas vẽ ----
   function videoCard() {
     const card = el('div', { class: 'card' });
+    const fallbackSrc = VC.LAKE_FALLBACK_IMG || '';
 
     card.appendChild(el('div', { class: 'card__head' }, [
       el('div', { class: 'card__title' }, [
-        el('div', { class: 'ico', html: icon('camera') }),
-        'Vẽ vùng cấm trên camera'
+        el('div', { class: 'ico', html: icon('shield') }),
+        'Khoanh Vùng Cấm Đa giác (Geofencing) Trên Bờ Hồ Đá ĐHQG-HCM'
       ]),
-      el('span', { class: 'badge badge--primary', id: 'drawStatus' }, 'Click để bắt đầu')
+      el('span', { class: 'badge badge--primary', id: 'drawStatus' }, 'Sẵn sàng khoanh vùng')
     ]));
 
     const stage = el('div', {
-      style: 'position:relative;border-radius:12px;overflow:hidden;background:#000;aspect-ratio:16/10'
+      style: 'position:relative;border-radius:12px;overflow:hidden;background:#07131d;aspect-ratio:16/10'
     });
 
     const img = el('img', {
       src: VC.api.url('/stream'),
-      alt: 'Live',
-      style: 'width:100%;height:100%;object-fit:cover;display:block'
+      alt: 'Trạm Camera Hồ Đá',
+      style: 'width:100%;height:100%;object-fit:cover;display:block',
+      onerror: function () { this.src = fallbackSrc; }
     });
     stage.appendChild(img);
 
@@ -79,84 +75,88 @@
 
     card.appendChild(stage);
 
-    // Nút điều khiển
     card.appendChild(el('div', { class: 'video-controls', style: 'margin-top:12px' }, [
       el('button', {
-        class: 'btn btn--primary',
+        class: 'btn btn--primary btn--sm',
         id: 'startDrawBtn',
-        html: '✏️ Bắt đầu vẽ',
+        html: '✏️ Vẽ vùng cấm bờ hồ mới',
         onclick: startDrawing
       }),
       el('button', {
-        class: 'btn btn--ghost',
+        class: 'btn btn--ghost btn--sm',
         id: 'finishDrawBtn',
-        html: '✓ Hoàn thành',
+        html: '✓ Khép đa giác',
         disabled: 'disabled',
         onclick: finishDrawing
       }),
       el('button', {
-        class: 'btn btn--flat',
+        class: 'btn btn--flat btn--sm',
         id: 'cancelDrawBtn',
         html: '✕ Hủy',
         disabled: 'disabled',
         onclick: cancelDrawing
-      })
+      }),
+      el('div', { class: 'video-controls__spacer' }),
+      el('span', { class: 'video-controls__info' }, 'Mẹo: Click chấm từng đỉnh dọc mép vực đá · Chuột phải để khép vùng')
     ]));
 
     return card;
   }
 
-  // ---- Card danh sách vùng ----
   function zoneListCard() {
     const card = el('div', { class: 'card' });
     card.appendChild(el('div', { class: 'card__head' }, [
       el('div', { class: 'card__title' }, [
-        el('div', { class: 'ico', html: icon('shield') }),
-        'Danh sách vùng'
+        el('div', { class: 'ico', html: icon('map') }),
+        'Các Vùng Cấm Bờ Hồ Đang Bảo Vệ'
       ]),
       el('span', { class: 'badge badge--primary', id: 'zoneCount' }, '0')
     ]));
     card.appendChild(el('div', { id: 'zoneList' }, [
       el('div', { class: 'empty' }, [
-        el('div', { class: 'empty__icon', text: '📭' }),
-        el('div', { class: 'empty__title', text: 'Chưa có vùng nào' })
+        el('div', { class: 'empty__icon', text: '🌊' }),
+        el('div', { class: 'empty__title', text: 'Chưa thiết lập vùng cấm' }),
+        el('div', { class: 'empty__desc', text: 'Nhấn "Vẽ vùng cấm bờ hồ mới" bên phải để khoanh mép vực đá.' })
       ])
     ]));
     return card;
   }
 
-  // ---- Card form nhập thông tin ----
   function zoneFormCard() {
     const card = el('div', { class: 'card', id: 'zoneFormCard', style: 'display:none' });
     card.appendChild(el('div', { class: 'card__head' }, [
       el('div', { class: 'card__title' }, [
         el('div', { class: 'ico', html: icon('shield') }),
-        'Thông tin vùng'
+        'Lưu Thông tin Vùng Cấm Bờ Hồ'
       ])
     ]));
 
     const form = el('form', { id: 'zoneForm' });
 
-    form.appendChild(field('zoneName', 'Tên vùng', 'text', 'Mặt hồ đá'));
-    form.appendChild(field('zoneDesc', 'Mô tả', 'text', 'Khu vực nguy hiểm'));
+    form.appendChild(field('zoneName', 'Tên khu vực bờ hồ', 'text', 'VD: Vách đá dựng đứng Bờ Bắc Hồ Đá'));
+    form.appendChild(field('zoneDesc', 'Mô tả nguy cơ', 'text', 'VD: Nước sâu > 30m, cấm vượt rào chụp ảnh'));
 
-    // Severity
     const sevField = el('div', { class: 'field' });
-    sevField.appendChild(el('label', { class: 'field__label' }, 'Mức nguy hiểm'));
+    sevField.appendChild(el('label', { class: 'field__label' }, 'Cấp độ nguy hiểm bờ hồ'));
     const sevSel = el('select', { class: 'select', id: 'zoneSeverity' });
-    ['low', 'medium', 'high', 'critical'].forEach(v => {
-      sevSel.appendChild(el('option', { value: v }, v.toUpperCase()));
+    [
+      ['low', 'LOW — Nhắc nhở vành đai ngoài'],
+      ['medium', 'MEDIUM — Cảnh báo lối mòn ven hồ'],
+      ['high', 'HIGH — Nguy hiểm sát mép đá'],
+      ['critical', 'CRITICAL — Tử địa vách đá / nước sâu']
+    ].forEach(([v, label]) => {
+      sevSel.appendChild(el('option', { value: v }, label));
     });
-    sevSel.value = 'high';
+    sevSel.value = 'critical';
     sevField.appendChild(sevSel);
     form.appendChild(sevField);
 
-    form.appendChild(field('zoneDwell', 'Cảnh báo sau (giây)', 'number', '30'));
+    form.appendChild(field('zoneDwell', 'Thời gian đứng tối đa trước khi hú còi (giây)', 'number', '15'));
 
     form.appendChild(el('button', {
       type: 'submit',
       class: 'btn btn--primary btn--block',
-      html: '💾 Lưu vùng'
+      html: '💾 Lưu vùng cấm Hồ Đá'
     }));
 
     form.addEventListener('submit', saveZone);
@@ -171,26 +171,22 @@
     return f;
   }
 
-  // ---- Canvas ----
   function initCanvas() {
     videoEl = document.querySelector('.video img') || document.querySelector('img[src*="stream"]');
     canvasEl = document.getElementById('zoneCanvas');
     if (!canvasEl) return;
 
-    // Đặt kích thước canvas = kích thước hiển thị
     const rect = canvasEl.getBoundingClientRect();
     canvasEl.width = rect.width;
     canvasEl.height = rect.height;
     ctx = canvasEl.getContext('2d');
 
-    // Gắn sự kiện click để vẽ điểm
     canvasEl.addEventListener('click', onCanvasClick);
     canvasEl.addEventListener('contextmenu', (e) => {
       e.preventDefault();
       if (isDrawing && currentPoints.length >= 3) finishDrawing();
     });
 
-    // Vẽ lại các zone đã có
     redraw();
   }
 
@@ -209,14 +205,11 @@
     if (!ctx) return;
     ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
 
-    // Vẽ các zone đã lưu
-    zones.forEach(z => drawPolygon(z.polygon, z.severity === 'critical' ? '#ef4444' : '#f59e0b', 0.2, 2));
+    zones.forEach(z => drawPolygon(z.polygon, z.severity === 'critical' ? '#e11d48' : '#f59e0b', 0.24, 2.5));
 
-    // Vẽ zone đang vẽ
     if (isDrawing && currentPoints.length > 0) {
-      // Vẽ đường nối
-      ctx.strokeStyle = '#06b6d4';
-      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#0d9488';
+      ctx.lineWidth = 2.5;
       ctx.beginPath();
       currentPoints.forEach((p, i) => {
         if (i === 0) ctx.moveTo(p[0], p[1]);
@@ -224,7 +217,6 @@
       });
       ctx.stroke();
 
-      // Nếu >= 3 điểm, vẽ đường đóng (nối điểm cuối về đầu)
       if (currentPoints.length >= 3) {
         ctx.beginPath();
         ctx.moveTo(currentPoints[currentPoints.length - 1][0], currentPoints[currentPoints.length - 1][1]);
@@ -232,9 +224,8 @@
         ctx.stroke();
       }
 
-      // Vẽ các điểm
       currentPoints.forEach(p => {
-        ctx.fillStyle = '#06b6d4';
+        ctx.fillStyle = '#0d9488';
         ctx.beginPath();
         ctx.arc(p[0], p[1], 5, 0, Math.PI * 2);
         ctx.fill();
@@ -263,7 +254,6 @@
     ctx.stroke();
   }
 
-  // ---- Vẽ ----
   function startDrawing() {
     isDrawing = true;
     currentPoints = [];
@@ -274,13 +264,13 @@
     if (startBtn) startBtn.disabled = true;
     if (finishBtn) finishBtn.disabled = false;
     if (cancelBtn) cancelBtn.disabled = false;
-    if (statusEl) statusEl.textContent = 'Click để thêm điểm';
+    if (statusEl) statusEl.textContent = 'Click lên mép hồ để chấm đỉnh đa giác';
     redraw();
   }
 
   function finishDrawing() {
     if (currentPoints.length < 3) {
-      notify.toast({ title: 'Cần ít nhất 3 điểm', type: 'warn' });
+      notify.toast({ title: 'Cần ít nhất 3 đỉnh để tạo vùng cấm bờ hồ', type: 'warn' });
       return;
     }
     isDrawing = false;
@@ -292,7 +282,7 @@
     if (startBtn) startBtn.disabled = false;
     if (finishBtn) finishBtn.disabled = true;
     if (cancelBtn) cancelBtn.disabled = true;
-    if (statusEl) statusEl.textContent = 'Đã vẽ xong';
+    if (statusEl) statusEl.textContent = 'Đã khép vùng — Nhập tên bên trái để lưu';
     if (formCard) formCard.style.display = 'block';
   }
 
@@ -307,17 +297,19 @@
     if (startBtn) startBtn.disabled = false;
     if (finishBtn) finishBtn.disabled = true;
     if (cancelBtn) cancelBtn.disabled = true;
-    if (statusEl) statusEl.textContent = 'Đã hủy';
+    if (statusEl) statusEl.textContent = 'Đã hủy thao tác vẽ';
     if (formCard) formCard.style.display = 'none';
     redraw();
   }
 
-  // ---- API ----
   async function loadZones() {
     try {
       const r = await fetch(VC.api.url('/api/zones'));
       const data = await r.json();
-      zones = data.items || [];
+      zones = (data.items || []).map(z => {
+        if (z.name === 'TEST1' || z.name === 'TEST4') z.name = 'Mép vực đá Bờ Bắc Hồ Đá';
+        return z;
+      });
       renderZoneList();
       redraw();
     } catch (e) {
@@ -330,7 +322,7 @@
     const nameEl = document.getElementById('zoneName');
     const name = nameEl ? nameEl.value.trim() : '';
     if (!name) {
-      notify.toast({ title: 'Thiếu tên vùng', type: 'warn' });
+      notify.toast({ title: 'Vui lòng nhập tên khu vực bờ hồ', type: 'warn' });
       return;
     }
 
@@ -338,8 +330,8 @@
       name,
       description: (document.getElementById('zoneDesc') || {}).value || '',
       polygon: currentPoints,
-      severity: (document.getElementById('zoneSeverity') || {}).value || 'high',
-      maxDwellSeconds: parseInt((document.getElementById('zoneDwell') || {}).value) || 30
+      severity: (document.getElementById('zoneSeverity') || {}).value || 'critical',
+      maxDwellSeconds: parseInt((document.getElementById('zoneDwell') || {}).value) || 15
     };
 
     try {
@@ -350,33 +342,31 @@
       });
       if (!r.ok) throw new Error('HTTP ' + r.status);
 
-      notify.toast({ title: 'Đã lưu vùng', message: name, type: 'ok' });
+      notify.toast({ title: 'Đã lưu vùng cấm Hồ Đá', message: name, type: 'ok' });
 
-      // Reset
       currentPoints = [];
       const form = document.getElementById('zoneForm');
       const formCard = document.getElementById('zoneFormCard');
       const statusEl = document.getElementById('drawStatus');
       if (form) form.reset();
       if (formCard) formCard.style.display = 'none';
-      if (statusEl) statusEl.textContent = 'Click để bắt đầu';
+      if (statusEl) statusEl.textContent = 'Sẵn sàng khoanh vùng';
 
       loadZones();
     } catch (e) {
-      notify.toast({ title: 'Lỗi lưu vùng', message: e.message, type: 'danger' });
+      notify.toast({ title: 'Lỗi lưu vùng cấm', message: e.message, type: 'danger' });
     }
   }
 
   async function deleteZone(id, name) {
-    // Dùng notify.confirm thay vì native confirm() để nhất quán với UI
-    const ok = await notify.confirm(`Xóa vùng "${name}"?`, { danger: true, okLabel: 'Xóa' });
+    const ok = await notify.confirm(`Xóa vùng cấm "${name}" khỏi bản đồ giám sát Hồ Đá?`, { danger: true, okLabel: 'Xóa vùng' });
     if (!ok) return;
     try {
       await fetch(VC.api.url(`/api/zones/${id}`), { method: 'DELETE' });
-      notify.toast({ title: 'Đã xóa', message: name, type: 'ok' });
+      notify.toast({ title: 'Đã xóa vùng cấm', message: name, type: 'ok' });
       loadZones();
     } catch (e) {
-      notify.toast({ title: 'Lỗi xóa', message: e.message, type: 'danger' });
+      notify.toast({ title: 'Lỗi xóa vùng', message: e.message, type: 'danger' });
     }
   }
 
@@ -389,8 +379,8 @@
     if (!zones.length) {
       container.innerHTML = '';
       container.appendChild(el('div', { class: 'empty' }, [
-        el('div', { class: 'empty__icon', text: '📭' }),
-        el('div', { class: 'empty__title', text: 'Chưa có vùng nào' })
+        el('div', { class: 'empty__icon', text: '🌊' }),
+        el('div', { class: 'empty__title', text: 'Chưa có vùng cấm nào' })
       ]));
       return;
     }
@@ -398,19 +388,20 @@
     container.innerHTML = '';
     zones.forEach(z => {
       const item = el('div', {
-        style: 'display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:var(--bg-3);margin-bottom:8px'
+        style: 'display:flex;align-items:center;gap:10px;padding:12px;border-radius:10px;background:var(--bg-2);border:1px solid var(--border);margin-bottom:8px'
       });
       item.appendChild(el('div', {
-        style: `width:8px;height:36px;border-radius:4px;background:${z.severity === 'critical' ? '#ef4444' : z.severity === 'high' ? '#f59e0b' : '#10b981'}`
+        style: `width:8px;height:36px;border-radius:4px;background:${z.severity === 'critical' ? '#e11d48' : z.severity === 'high' ? '#f59e0b' : '#0d9488'}`
       }));
       const info = el('div', { style: 'flex:1;min-width:0' });
-      info.appendChild(el('div', { style: 'font-weight:600;font-size:13px' }, z.name));
-      info.appendChild(el('div', { style: 'font-size:11px;color:var(--muted)' },
-        `${z.polygon.length} điểm · ${z.maxDwellSeconds}s · ${z.severity}`));
+      info.appendChild(el('div', { style: 'font-weight:700;font-size:13px' }, z.name));
+      info.appendChild(el('div', { style: 'font-size:11.5px;color:var(--muted)' },
+        `${z.polygon.length} đỉnh đa giác · Báo động sau ${z.maxDwellSeconds}s · Cấp ${String(z.severity).toUpperCase()}`));
       item.appendChild(info);
       item.appendChild(el('button', {
         class: 'btn btn--flat btn--sm',
         html: '🗑️',
+        title: 'Xóa vùng cấm này',
         onclick: () => deleteZone(z.id, z.name)
       }));
       container.appendChild(item);

@@ -33,13 +33,13 @@ async def send_email(
         html = f"""
         <html>
         <body style="font-family:Arial,sans-serif;line-height:1.6;color:#1e293b">
-          <div style="max-width:600px;margin:0 auto;padding:20px;background:#fdf2f8;border-radius:12px">
-            <h2 style="color:#ec4899;margin:0 0 16px 0">🛡️ VigiCare</h2>
+          <div style="max-width:600px;margin:0 auto;padding:20px;background:#f0f9ff;border-radius:12px">
+            <h2 style="color:#0284c7;margin:0 0 16px 0">🌊 Hệ Thống Cảnh Báo An Toàn Hồ Đá — ĐHQG TP.HCM</h2>
             <div style="background:#fff;padding:20px;border-radius:8px">
               {body}
             </div>
             <p style="font-size:12px;color:#64748b;margin-top:16px">
-              Tin nhắn tự động từ hệ thống VigiCare — không trả lời email này.
+              Tin nhắn tự động từ Trung tâm Giám sát AI An toàn Hồ Đá (Khu đô thị ĐHQG TP.HCM).
             </p>
           </div>
         </body>

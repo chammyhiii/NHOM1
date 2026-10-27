@@ -1,6 +1,6 @@
 /* ============================================================
-   SafeZone-HD — radar.js
-   Radar WiFi — Danh sách thiết bị + bản đồ 2D
+   SafeZone Hồ Đá · ĐHQG-HCM — radar.js
+   Radar Quét Tín hiệu Vành đai Bờ Hồ Đá & Bản đồ Tọa độ 2D
    ============================================================ */
 (function (VC) {
   'use strict';
@@ -12,11 +12,39 @@
   let devices = [];
 
   function renderRadar(root) {
-    // Dừng timer cũ trước khi render mới — tránh memory leak khi navigate qua lại
     if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
     root.innerHTML = '';
 
-    const wrap = el('div', { class: 'grid-2' });
+    // 1. TOP ROW: 3-KPI Perimeter Strip (replaces old right-bottom stats card)
+    root.appendChild(el('div', { class: 'kpi-strip', style: 'grid-template-columns:repeat(3,1fr)' }, [
+      el('div', { class: 'kpi-tile' }, [
+        el('div', { class: 'kpi-tile__icon is-primary', text: '📡' }),
+        el('div', { class: 'kpi-tile__body' }, [
+          el('div', { class: 'kpi-tile__label', text: 'Tín hiệu Thiết bị Quanh Hồ Đá' }),
+          el('div', { class: 'kpi-tile__val is-primary', id: 'totalDevices', text: '0' }),
+          el('div', { class: 'kpi-tile__sub', text: 'Quét tự động chu kỳ 3 giây' })
+        ])
+      ]),
+      el('div', { class: 'kpi-tile' }, [
+        el('div', { class: 'kpi-tile__icon is-danger', text: '🚨' }),
+        el('div', { class: 'kpi-tile__body' }, [
+          el('div', { class: 'kpi-tile__label', text: 'Tín hiệu Sát Vách Đá / Vùng Cấm' }),
+          el('div', { class: 'kpi-tile__val is-danger', id: 'dangerDevices', text: '0' }),
+          el('div', { class: 'kpi-tile__sub', text: 'Khoảng cách < 11m tính từ mép hồ' })
+        ])
+      ]),
+      el('div', { class: 'kpi-tile' }, [
+        el('div', { class: 'kpi-tile__icon is-ok', text: '🌊' }),
+        el('div', { class: 'kpi-tile__body' }, [
+          el('div', { class: 'kpi-tile__label', text: 'Bán kính Vành đai Quét Bờ Hồ' }),
+          el('div', { class: 'kpi-tile__val is-ok', text: '100m' }),
+          el('div', { class: 'kpi-tile__sub', text: 'Cụm Hồ Đá Trung tâm ĐHQG-HCM' })
+        ])
+      ])
+    ]));
+
+    // 2. BOTTOM ROW: Command Deck (Left 380px = Danh sách tín hiệu ven hồ; Right Main Stage = Radar 2D đồng tâm Hồ Đá)
+    const wrap = el('div', { class: 'command-deck' });
 
     const left = el('div');
     left.appendChild(deviceListCard());
@@ -24,7 +52,6 @@
 
     const right = el('div');
     right.appendChild(map2DCard());
-    right.appendChild(statsCard());
     wrap.appendChild(right);
 
     root.appendChild(wrap);
@@ -37,10 +64,10 @@
     const card = el('div', { class: 'card' });
     card.appendChild(el('div', { class: 'card__head' }, [
       el('div', { class: 'card__title' }, [
-        el('div', { class: 'ico', html: icon('camera') }),
-        'Thiết bị WiFi quanh hồ đá'
+        el('div', { class: 'ico', html: icon('activity') }),
+        'Tín hiệu Thiết bị Di động Ven Hồ Đá'
       ]),
-      el('div', { style: 'display:flex;gap:8px' }, [
+      el('div', { style: 'display:flex;gap:8px;align-items:center' }, [
         el('button', {
           class: 'btn btn--ghost btn--sm',
           html: '🔄 Quét ngay',
@@ -52,7 +79,7 @@
     card.appendChild(el('div', { id: 'deviceList' }, [
       el('div', { class: 'empty' }, [
         el('div', { class: 'empty__icon', text: '📡' }),
-        el('div', { class: 'empty__title', text: 'Đang quét thiết bị...' })
+        el('div', { class: 'empty__title', text: 'Đang quét tín hiệu bờ hồ...' })
       ])
     ]));
     return card;
@@ -62,13 +89,14 @@
     const card = el('div', { class: 'card' });
     card.appendChild(el('div', { class: 'card__head' }, [
       el('div', { class: 'card__title' }, [
-        el('div', { class: 'ico', html: icon('activity') }),
-        'Bản đồ vị trí ước lượng'
-      ])
+        el('div', { class: 'ico', html: icon('map') }),
+        'Radar 2D Định vị Khoảng cách quanh Lòng Hồ Đá ĐHQG-HCM'
+      ]),
+      el('span', { class: 'badge badge--ok' }, 'Path-Loss RSSI')
     ]));
 
     const wrap = el('div', {
-      style: 'position:relative;width:100%;aspect-ratio:1;background:#0a0e1a;border-radius:12px;overflow:hidden'
+      style: 'position:relative;width:100%;aspect-ratio:16/10;background:#07131d;border-radius:12px;overflow:hidden'
     });
 
     const canvas = el('canvas', {
@@ -81,30 +109,6 @@
     return card;
   }
 
-  function statsCard() {
-    const card = el('div', { class: 'card' });
-    card.appendChild(el('div', { class: 'card__head' }, [
-      el('div', { class: 'card__title' }, [
-        el('div', { class: 'ico', html: icon('chart') }),
-        'Thống kê'
-      ])
-    ]));
-
-    const grid = el('div', { class: 'stats' });
-    grid.appendChild(statBox('📡', 'Tổng thiết bị', '0', 'totalDevices'));
-    grid.appendChild(statBox('🚨', 'Trong vùng cấm', '0', 'dangerDevices'));
-    card.appendChild(grid);
-    return card;
-  }
-
-  function statBox(emoji, label, value, id) {
-    return el('div', { class: 'stat' }, [
-      el('div', { class: 'stat__head' }, [emoji + ' ' + label]),
-      el('div', { class: 'stat__val', id, text: value })
-    ]);
-  }
-
-  // ---- API ----
   async function loadDevices() {
     try {
       const r = await fetch(VC.api.url('/api/radar/devices'));
@@ -120,10 +124,10 @@
   async function triggerScan() {
     try {
       await fetch(VC.api.url('/api/radar/scan'), { method: 'POST' });
-      notify.toast({ title: 'Đang quét...', type: 'info', duration: 1500 });
+      notify.toast({ title: 'Đang quét vành đai bờ Hồ Đá...', type: 'info', duration: 1500 });
       setTimeout(loadDevices, 2500);
     } catch (e) {
-      notify.toast({ title: 'Lỗi quét', message: e.message, type: 'danger' });
+      notify.toast({ title: 'Lỗi quét radar', message: e.message, type: 'danger' });
     }
   }
 
@@ -141,7 +145,7 @@
       container.innerHTML = '';
       container.appendChild(el('div', { class: 'empty' }, [
         el('div', { class: 'empty__icon', text: '📡' }),
-        el('div', { class: 'empty__title', text: 'Không thấy thiết bị nào' })
+        el('div', { class: 'empty__title', text: 'Chưa phát hiện thiết bị gần mép hồ' })
       ]));
       return;
     }
@@ -150,10 +154,10 @@
     devices.forEach(d => {
       const danger = d.in_danger_zone;
       const item = el('div', {
-        style: `display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:${danger ? 'rgba(239,68,68,0.1)' : 'var(--bg-3)'};border-left:3px solid ${danger ? '#ef4444' : 'transparent'};margin-bottom:6px`
+        style: `display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:${danger ? 'rgba(225,29,72,0.1)' : 'var(--bg-2)'};border-left:3px solid ${danger ? '#e11d48' : '#0d9488'};margin-bottom:6px`
       });
       item.appendChild(el('div', {
-        style: 'width:32px;height:32px;border-radius:8px;background:var(--bg-2);display:grid;place-items:center;font-size:14px'
+        style: 'width:32px;height:32px;border-radius:8px;background:var(--bg-3);display:grid;place-items:center;font-size:14px'
       }, danger ? '🚨' : '📶'));
 
       const info = el('div', { style: 'flex:1;min-width:0' });
@@ -162,11 +166,11 @@
       }, d.ssid || d.mac_address));
       info.appendChild(el('div', {
         style: 'font-size:11px;color:var(--muted);font-family:monospace'
-      }, `${d.mac_address} · ${rssiToDistance(d.rssi)}`));
+      }, `${d.mac_address} · Cách trạm ${rssiToDistance(d.rssi)}`));
       item.appendChild(info);
 
       item.appendChild(el('div', {
-        style: `font-family:monospace;font-size:12px;font-weight:700;color:${danger ? '#ef4444' : '#06b6d4'}`
+        style: `font-family:monospace;font-size:12px;font-weight:700;color:${danger ? '#e11d48' : '#0d9488'}`
       }, `${d.rssi} dBm`));
 
       container.appendChild(item);
@@ -174,7 +178,6 @@
   }
 
   function rssiToDistance(rssi) {
-    // Công thức path loss: d = 10^((-45 - rssi) / 25)
     if (!rssi) return '?';
     const d = Math.pow(10, (-45 - rssi) / 25);
     return `~${d.toFixed(1)}m`;
@@ -190,14 +193,13 @@
 
     const w = canvas.width, h = canvas.height;
     const cx = w / 2, cy = h / 2;
-    const scale = Math.min(w, h) / 100; // 100m → cạnh ngắn
+    const scale = Math.min(w, h) / 100;
 
-    // Clear
-    ctx.fillStyle = '#0a0e1a';
+    ctx.fillStyle = '#07131d';
     ctx.fillRect(0, 0, w, h);
 
-    // Vẽ lưới
-    ctx.strokeStyle = 'rgba(6,182,212,0.1)';
+    // Lưới tọa độ đồng tâm
+    ctx.strokeStyle = 'rgba(13,148,136,0.14)';
     ctx.lineWidth = 1;
     for (let i = -50; i <= 50; i += 10) {
       ctx.beginPath();
@@ -208,29 +210,35 @@
       ctx.stroke();
     }
 
-    // Vẽ hồ đá (bán kính 9m)
-    ctx.strokeStyle = '#1e40af';
-    ctx.lineWidth = 2;
+    // Vẽ Lòng Hồ Đá (bán kính 12m mô phỏng tâm quét)
+    ctx.strokeStyle = '#0284c7';
+    ctx.lineWidth = 2.5;
     ctx.beginPath();
-    ctx.arc(cx, cy, 9 * scale, 0, Math.PI * 2);
+    ctx.arc(cx, cy, 12 * scale, 0, Math.PI * 2);
     ctx.stroke();
-    ctx.fillStyle = 'rgba(30,64,175,0.2)';
+    ctx.fillStyle = 'rgba(2,132,199,0.28)';
     ctx.fill();
 
-    // Vẽ bờ đá (bán kính 11m)
-    ctx.strokeStyle = '#4a4540';
-    ctx.lineWidth = 1;
+    // Vẽ Vành đai Vách Đá nguy hiểm (bán kính 16m)
+    ctx.strokeStyle = '#e11d48';
+    ctx.setLineDash([5, 4]);
+    ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.arc(cx, cy, 11 * scale, 0, Math.PI * 2);
+    ctx.arc(cx, cy, 16 * scale, 0, Math.PI * 2);
     ctx.stroke();
+    ctx.setLineDash([]);
 
-    // Vẽ các thiết bị
+    // Nhãn tâm Hồ Đá
+    ctx.fillStyle = '#38bdf8';
+    ctx.font = 'bold 11px Be Vietnam Pro, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('LÒNG HỒ ĐÁ ĐHQG', cx, cy + 4);
+
     devices.forEach(d => {
       const x = cx + (d.estimated_x || 0) * scale;
       const y = cy + (d.estimated_y || 0) * scale;
-      const color = d.in_danger_zone ? '#ef4444' : '#06b6d4';
+      const color = d.in_danger_zone ? '#e11d48' : '#2dd4bf';
 
-      // Vòng tròn khoảng cách
       if (d.rssi) {
         const dist = Math.pow(10, (-45 - d.rssi) / 25);
         ctx.strokeStyle = color + '30';
@@ -240,38 +248,28 @@
         ctx.stroke();
       }
 
-      // Chấm thiết bị
       ctx.fillStyle = color;
       ctx.beginPath();
-      ctx.arc(x, y, 5, 0, Math.PI * 2);
+      ctx.arc(x, y, 5.5, 0, Math.PI * 2);
       ctx.fill();
 
-      // Viền
       ctx.strokeStyle = '#fff';
       ctx.lineWidth = 2;
       ctx.stroke();
 
-      // Label
       ctx.fillStyle = '#fff';
-      ctx.font = 'bold 10px Inter, sans-serif';
+      ctx.font = 'bold 10px Be Vietnam Pro, sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText(d.ssid || d.mac_address.slice(-5), x, y - 10);
     });
 
-    // Tâm
-    ctx.fillStyle = '#fbbf24';
-    ctx.beginPath();
-    ctx.arc(cx, cy, 4, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Compass
-    ctx.fillStyle = 'rgba(255,255,255,0.5)';
-    ctx.font = 'bold 12px Inter, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    ctx.font = 'bold 11px Be Vietnam Pro, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('N', cx, 15);
-    ctx.fillText('S', cx, h - 5);
-    ctx.fillText('W', 10, cy);
-    ctx.fillText('E', w - 10, cy);
+    ctx.fillText('BẮC (Bờ Vách Đá)', cx, 18);
+    ctx.fillText('NAM (Viện CNSH)', cx, h - 8);
+    ctx.fillText('TÂY', 24, cy);
+    ctx.fillText('ĐÔNG (Đ. Nguyễn Du)', w - 65, cy);
   }
 
   VC.views = VC.views || {};
