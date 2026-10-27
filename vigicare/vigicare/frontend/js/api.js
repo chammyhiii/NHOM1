@@ -230,9 +230,8 @@
         const msg = JSON.parse(e.data);
         if (msg.type === 'alert') {
           emitRealtimeAlert(msg.data);
-        } else if (msg.type === 'detections') {
-          emitRealtimeDetections(msg.data);
         }
+        // Không nhận detections từ WebSocket chung để đảm bảo camera của mỗi laptop là PRIVATE 100%
       } catch (err) { /* ignore */ }
     };
 

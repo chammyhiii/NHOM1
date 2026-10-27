@@ -141,11 +141,13 @@
       onclick: () => VC.auth && VC.auth.showAccount()
     }));
 
-    // Bật/Tắt Camera AI
+    // Bật/Tắt Camera Riêng tư của thiết bị này
+    const isLocalCamOn = Boolean(VC.camera && VC.camera.isActive());
+    s.cameraOn = isLocalCamOn;
     actions.appendChild(el('button', {
-      class: `icon-btn ${s.cameraOn ? 'is-active' : ''}`,
+      class: `icon-btn ${isLocalCamOn ? 'is-active' : ''}`,
       id: 'cameraToggleBtn',
-      title: s.cameraOn ? 'Camera AI đang BẬT (nhấn để tắt)' : 'Camera AI đang TẮT (nhấn để bật)',
+      title: isLocalCamOn ? 'Camera riêng của máy này đang BẬT (nhấn để tắt)' : 'Bật Camera riêng của laptop này (Private)',
       html: icon('camera'),
       onclick: toggleCamera
     }));
@@ -218,40 +220,44 @@
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  /* ---------- Camera toggle ---------- */
+  /* ---------- Camera toggle (Private per laptop/browser) ---------- */
   async function toggleCamera() {
     const btn = document.getElementById('cameraToggleBtn');
     if (!btn) return;
     btn.disabled = true;
 
     try {
-      const r = await fetch(api.url('/api/cameras/control/toggle'), { method: 'POST' });
-      const data = await r.json();
-      store.state.cameraOn = data.camera_on;
-
-      notify.toast({
-        title: data.camera_on ? 'Trạm Camera AI đã BẬT' : 'Trạm Camera AI đã TẮT',
-        message: data.camera_on ? 'Đang giám sát an toàn bờ Hồ Đá.' : 'Đã tạm ngắt kết nối webcam.',
-        type: data.camera_on ? 'ok' : 'warn',
-        duration: 2500,
-      });
-      notify.alarm(data.camera_on ? 'ok' : 'beep');
+      if (VC.camera.isActive()) {
+        VC.camera.stop();
+        store.state.cameraOn = false;
+        notify.toast({
+          title: 'Đã tắt Camera của thiết bị này',
+          message: 'Đã ngắt kết nối webcam riêng tư trên trình duyệt của bạn.',
+          type: 'warn',
+          duration: 2500,
+        });
+        notify.alarm('beep');
+      } else {
+        await VC.camera.enable();
+        store.state.cameraOn = true;
+        notify.toast({
+          title: 'Đã bật Camera Riêng tư (Thiết bị này)',
+          message: 'Hình ảnh camera chỉ hiển thị riêng trên laptop của bạn (Private).',
+          type: 'ok',
+          duration: 2500,
+        });
+        notify.alarm('ok');
+      }
     } catch (err) {
-      notify.toast({ title: 'Lỗi', message: err.message, type: 'danger' });
+      notify.toast({ title: 'Không thể mở camera', message: err.message, type: 'danger' });
     } finally {
       btn.disabled = false;
-      renderTopbar();
+      render();
     }
   }
 
   async function initCameraState() {
-    try {
-      const r = await fetch(api.url('/api/cameras/control/status'));
-      const data = await r.json();
-      store.state.cameraOn = data.camera_on;
-    } catch (e) {
-      store.state.cameraOn = true;
-    }
+    store.state.cameraOn = Boolean(VC.camera && VC.camera.isActive());
   }
 
   /* ---------- Theme / Sound ---------- */

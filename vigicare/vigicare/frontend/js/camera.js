@@ -2,11 +2,27 @@
   'use strict';
 
   const STORAGE_KEY = 'vigicare.camera.device';
+  const CLIENT_ID_KEY = 'vigicare.private.client_id';
   let stream = null;
   let devices = [];
   let uploadTimer = null;
   let offscreenCanvas = null;
   let isUploading = false;
+
+  function getPrivateClientId() {
+    try {
+      let cid = sessionStorage.getItem(CLIENT_ID_KEY);
+      if (!cid) {
+        cid = 'vc-priv-' + Math.random().toString(36).slice(2, 10) + '-' + Date.now().toString(36);
+        sessionStorage.setItem(CLIENT_ID_KEY, cid);
+      }
+      return cid;
+    } catch (e) {
+      return 'vc-priv-' + Math.random().toString(36).slice(2, 10);
+    }
+  }
+
+  const privateClientId = getPrivateClientId();
 
   function readSelectedDevice() {
     try {
@@ -74,6 +90,9 @@
     selectedDeviceId = track.getSettings().deviceId || deviceId || '';
     saveSelectedDevice(selectedDeviceId);
     await refreshDevices();
+    if (VC.store && VC.store.state) {
+      VC.store.state.cameraOn = true;
+    }
     return stream;
   }
 
@@ -85,7 +104,7 @@
       offscreenCanvas = document.createElement('canvas');
     }
 
-    // Gửi frame định kỳ ~7 FPS lên AI backend (có chống nghẽn hàng đợi isUploading)
+    // Gửi frame định kỳ ở chế độ PRIVATE (kèm X-Client-Id riêng của trình duyệt này)
     uploadTimer = setInterval(() => {
       if (isUploading || !isActive() || !video.videoWidth || !video.videoHeight) return;
 
@@ -115,12 +134,15 @@
         }
         fetch(VC.api.url('/api/stream/upload_frame'), {
           method: 'POST',
-          headers: { 'Content-Type': 'image/jpeg' },
+          headers: {
+            'Content-Type': 'image/jpeg',
+            'X-Client-Id': privateClientId
+          },
           body: blob
         })
           .then(r => (r.ok ? r.json() : null))
           .then(res => {
-            if (!res || !res.ok) return;
+            if (!res || !res.ok || !isActive()) return;
             if (Array.isArray(res.detections) && VC.api.emitRealtimeDetections) {
               VC.api.emitRealtimeDetections(res);
             }
@@ -144,13 +166,13 @@
     isUploading = false;
   }
 
-  function attach(video) {
+  function attach(video, withAi = true) {
     if (!video || !stream) return false;
     video.srcObject = stream;
     video.muted = true;
     video.playsInline = true;
     video.play().catch(() => {});
-    startFrameUploader(video);
+    if (withAi) startFrameUploader(video);
     return true;
   }
 
@@ -160,6 +182,9 @@
       stream.getTracks().forEach(track => track.stop());
     }
     stream = null;
+    if (VC.store && VC.store.state) {
+      VC.store.state.cameraOn = false;
+    }
   }
 
   function isActive() {
@@ -189,6 +214,7 @@
     stop,
     isActive,
     currentDeviceId,
-    getDevices
+    getDevices,
+    clientId: privateClientId
   };
 })(window.VC);

@@ -97,15 +97,19 @@ async def upload_frame(request: Request):
     nparr = np.frombuffer(body, np.uint8)
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
     if img is not None:
-        new_alerts = await pipeline.process_client_frame(img)
+        client_id = (
+            request.headers.get("X-Client-Id")
+            or (f"{request.client.host}:{request.client.port}" if request.client else "anon")
+        )
+        res = await pipeline.process_client_frame(img, client_id=client_id)
         h_f, w_f = img.shape[:2]
         return {
             "ok": True,
             "model": getattr(pipeline.pose, "model_label", "YOLOv8x-Pose"),
-            "detections": getattr(pipeline, "_last_detections", []),
-            "events": getattr(pipeline, "_last_events", []),
+            "detections": res.get("detections", []),
+            "events": res.get("events", []),
             "zones": getattr(pipeline.zone_monitor, "zones", []) if hasattr(pipeline, "zone_monitor") else [],
-            "alerts": new_alerts or [],
+            "alerts": res.get("alerts", []),
             "frame_w": w_f,
             "frame_h": h_f,
         }

@@ -414,15 +414,32 @@
         style: 'position:absolute;bottom:12px;left:14px;background:rgba(13,148,136,0.92);color:#fff;padding:5px 12px;border-radius:6px;font-size:11.5px;font-weight:600;display:flex;align-items:center;gap:6px;z-index:5;transition:background 0.2s'
       }, [
         el('span', { class: 'dot' }),
-        el('span', { id: 'aiLiveBadgeText' }, 'AI Thị giác máy tính sẵn sàng — Đang quét khu vực bờ Hồ Đá')
+        el('span', { id: 'aiLiveBadgeText' }, '🔒 Camera Riêng tư (Thiết bị này) — AI đang quét khu vực bờ Hồ Đá')
       ]));
     } else {
       const fallback = el('img', {
-        src: VC.api.streamUrl(),
-        alt: cam.name,
-        onerror: () => { fallback.src = fallbackSrc; }
+        src: fallbackSrc,
+        alt: cam.name
       });
       surface.appendChild(fallback);
+      surface.appendChild(el('div', {
+        style: 'position:absolute;bottom:12px;left:14px;background:rgba(7,19,29,0.82);backdrop-filter:blur(8px);color:#e2f1f8;padding:6px 12px;border-radius:8px;border:1px solid rgba(45,212,191,0.35);font-size:11.5px;font-weight:600;display:flex;align-items:center;gap:8px;z-index:4'
+      }, [
+        el('span', {}, '🔒 Chế độ Camera Riêng tư (Private) · Chỉ hiển thị trên thiết bị của bạn'),
+        el('button', {
+          class: 'btn btn--primary btn--sm',
+          style: 'height:24px;padding:0 10px;font-size:11px',
+          onclick: async () => {
+            try {
+              await VC.camera.enable();
+              VC.app.rerender();
+              notify.toast({ title: 'Đã bật Camera riêng của thiết bị này', message: 'Hình ảnh camera được bảo mật riêng tư trên trình duyệt của bạn.', type: 'ok' });
+            } catch (err) {
+              notify.toast({ title: 'Không thể mở camera', message: err.message, type: 'danger' });
+            }
+          }
+        }, '🎥 Bật Camera máy này')
+      ]));
     }
     surface.appendChild(el('div', { class: 'video__top' }, [
       el('span', { class: 'video__tag' }, label === 'Live' ? fmtDateTime() : 'LIVE · HỒ ĐÁ ĐHQG'),

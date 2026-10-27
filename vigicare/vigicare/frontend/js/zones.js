@@ -59,13 +59,23 @@
       style: 'position:relative;border-radius:12px;overflow:hidden;background:#07131d;aspect-ratio:16/10'
     });
 
-    const img = el('img', {
-      src: VC.api.url('/stream'),
-      alt: 'Trạm Camera Hồ Đá',
-      style: 'width:100%;height:100%;object-fit:cover;display:block',
-      onerror: function () { this.src = fallbackSrc; }
-    });
-    stage.appendChild(img);
+    if (VC.camera && VC.camera.isActive()) {
+      const localVideo = el('video', {
+        autoplay: true,
+        muted: true,
+        playsinline: true,
+        style: 'width:100%;height:100%;object-fit:cover;display:block'
+      });
+      stage.appendChild(localVideo);
+      VC.camera.attach(localVideo, false);
+    } else {
+      const img = el('img', {
+        src: fallbackSrc,
+        alt: 'Trạm Camera Hồ Đá (Chế độ Riêng tư)',
+        style: 'width:100%;height:100%;object-fit:cover;display:block'
+      });
+      stage.appendChild(img);
+    }
 
     const canvas = el('canvas', {
       id: 'zoneCanvas',

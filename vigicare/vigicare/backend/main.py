@@ -79,10 +79,11 @@ async def lifespan(app: FastAPI):
             f"{alert['cameraName']} · conf={alert['confidence']:.2f}"
         )
 
-        await stream_router.ws_manager.broadcast({
-            "type": "alert",
-            "data": alert,
-        })
+        if not ev.get("privateClient"):
+            await stream_router.ws_manager.broadcast({
+                "type": "alert",
+                "data": alert,
+            })
 
         # ============================================================
         # Kiểm tra xem có nên gửi mail không (theo setting trong config)
