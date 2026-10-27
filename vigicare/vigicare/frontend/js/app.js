@@ -362,16 +362,9 @@
       });
     }
     try {
-      await VC.camera.refreshDevices();
-      // Nếu trình duyệt đã được cấp quyền camera từ trước, tự động mở camera riêng của máy này
-      if (navigator.permissions && navigator.permissions.query) {
-        const perm = await navigator.permissions.query({ name: 'camera' });
-        if (perm && perm.state === 'granted') {
-          await VC.camera.enable();
-        }
-      }
+      await VC.camera.enable();
     } catch (e) {
-      console.warn('[VC] Không thể tự động liệt kê/mở camera của thiết bị', e);
+      console.warn('[VC] Chưa mở camera tự động (người dùng có thể bấm nút Bật Camera):', e);
     }
 
     try {

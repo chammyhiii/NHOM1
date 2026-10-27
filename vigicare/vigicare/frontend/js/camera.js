@@ -71,34 +71,50 @@
     }
   }
 
-  async function enable(requestedDeviceId = selectedDeviceId) {
-    if (!isSupported()) {
-      throw new Error('Trình duyệt không hỗ trợ WebRTC Camera (hãy mở bằng HTTPS hoặc localhost).');
-    }
-
-    const cleanId = sanitizeDeviceId(requestedDeviceId);
-    stop();
-
+  async function requestBrowserStream(cleanId) {
     const videoConstraints = {
       width: { ideal: 1280 },
       height: { ideal: 720 }
     };
     if (cleanId) {
-      // Dùng ideal thay vì exact để không bao giờ bị lỗi OverconstrainedError khi ID thiết bị thay đổi
       videoConstraints.deviceId = { ideal: cleanId };
     }
-
     try {
-      stream = await navigator.mediaDevices.getUserMedia({
+      return await navigator.mediaDevices.getUserMedia({
         video: videoConstraints,
         audio: false
       });
-    } catch (err1) {
-      // Fallback sang cấu hình video cơ bản nhất để luôn xin được quyền camera
-      stream = await navigator.mediaDevices.getUserMedia({
+    } catch (e) {
+      return await navigator.mediaDevices.getUserMedia({
         video: true,
         audio: false
       });
+    }
+  }
+
+  async function enable(requestedDeviceId = selectedDeviceId) {
+    if (!isSupported()) {
+      throw new Error('Trình duyệt không hỗ trợ WebRTC Camera (hãy mở bằng HTTPS hoặc localhost / 127.0.0.1).');
+    }
+
+    const cleanId = sanitizeDeviceId(requestedDeviceId);
+    stop();
+
+    // Giải phóng cv2.VideoCapture(0) trên backend (nếu server chạy cùng máy Windows đang giữ độc quyền webcam)
+    try {
+      if (VC.api && VC.api.url) {
+        await fetch(VC.api.url('/api/cameras/control/off'), { method: 'POST' });
+      }
+    } catch (e) {
+      /* ignore */
+    }
+
+    try {
+      stream = await requestBrowserStream(cleanId);
+    } catch (err1) {
+      // Nếu Windows vừa nhả driver webcam từ tiến trình Python, đợi 650ms rồi mở lại
+      await new Promise(r => setTimeout(r, 650));
+      stream = await requestBrowserStream('');
     }
 
     const track = stream.getVideoTracks()[0];
