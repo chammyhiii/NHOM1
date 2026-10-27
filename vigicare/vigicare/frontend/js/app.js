@@ -42,14 +42,17 @@
     return (list || []).map(normalizeAlert);
   }
 
-  /* ---------- Render horizontal command nav (hover-to-reveal labels) ---------- */
+  /* ---------- Render horizontal command nav (Phân tách 2 miền Admin / Khách hàng) ---------- */
   function renderSidebar() {
     const sidebar = $('#sidebar');
     sidebar.innerHTML = '';
 
+    const isAdmin = Boolean(VC.auth && VC.auth.isAdmin);
     const nav = el('nav', { class: 'sidebar__nav' });
-    const items = VC.NAV.slice();
-    items.push({ id: 'admin', label: 'Quản trị doanh thu', icon: 'shield' });
+    const items = isAdmin
+      ? [{ id: 'admin', label: 'Quản trị Doanh thu & Đơn hàng (Admin)', icon: 'shield' }, ...VC.NAV.filter(x => x.id !== 'upgrade')]
+      : VC.NAV.slice();
+
     items.forEach(item => {
       const btn = el('button', {
         class: `nav-btn ${store.state.view === item.id ? 'is-active' : ''}`,
@@ -66,22 +69,24 @@
 
     sidebar.appendChild(el('div', { class: 'sidebar__foot' }, [
       el('div', { class: 'status-pill', title: 'Trạm AI Hồ Đá hoạt động ổn định' }),
-      el('span', { class: 'sidebar__foot-hint', text: '💡 Rà chuột để xem chi tiết ·' }),
+      el('span', { class: 'sidebar__foot-hint', text: isAdmin ? '🛡️ Miền Quản trị viên ·' : '👤 Miền Khách hàng ·' }),
       el('div', {}, `v${VC.APP.version}`)
     ]));
   }
 
-  /* ---------- Render compact top command bar (hover-to-reveal details) ---------- */
+  /* ---------- Render compact top command bar (Phân tách 2 miền Admin / Khách hàng) ---------- */
   function renderTopbar() {
     const topbar = $('#topbar');
     topbar.innerHTML = '';
     const s = store.state;
+    const isAdmin = Boolean(VC.auth && VC.auth.isAdmin);
+    const curUser = VC.auth && VC.auth.user;
 
     const brandRow = el('div', {
       class: 'topbar__brand-row',
       style: 'cursor:pointer',
-      title: 'Rà chuột để xem mô tả dự án · Nhấn để về Trung tâm Điều hành',
-      onclick: () => go('overview')
+      title: 'Rà chuột để xem mô tả dự án · Nhấn để về trang chính của miền hiện tại',
+      onclick: () => go(isAdmin ? 'admin' : 'overview')
     }, [
       el('div', { class: 'topbar__logo' }, '🌊'),
       el('div', { class: 'topbar__title' }, [
@@ -93,50 +98,68 @@
 
     const actions = el('div', { class: 'topbar__actions' });
 
-    // Status + Clock chip (hover reveals full label)
-    actions.appendChild(el('span', { class: 'chip', title: 'API & WebSocket đang kết nối trực tiếp tới Trạm AI Hồ Đá' }, [
-      el('span', { class: 'dot' }),
-      el('b', { id: 'clock' }, fmtTime()),
-      el('span', { class: 'topbar-hover-text' }, '· AI Hồ Đá Online')
+    // Huy hiệu phân biệt rõ 2 miền: MIỀN ADMIN vs MIỀN KHÁCH HÀNG
+    actions.appendChild(el('button', {
+      class: `portal-badge ${isAdmin ? 'portal-badge--admin' : 'portal-badge--customer'}`,
+      title: isAdmin
+        ? 'Đang ở Miền Quản trị viên (Admin) — Nhấn để xem thông tin hoặc chuyển sang Miền Khách hàng'
+        : 'Đang ở Miền Khách hàng — Nhấn để xem thông tin hoặc chuyển sang Miền Admin',
+      onclick: () => VC.auth && VC.auth.showAccount()
+    }, [
+      el('span', {}, isAdmin ? '🛡️ MIỀN ADMIN' : '👤 MIỀN KHÁCH HÀNG'),
+      curUser ? el('span', { class: 'topbar-hover-text' }, '· ' + curUser.email) : null
     ]));
 
-    const curPlan = (VC.auth && VC.auth.plan()) || 'free';
-    const curUser = VC.auth && VC.auth.user;
-    if (curPlan === 'free') {
+    if (isAdmin) {
+      // Nút Quản trị Doanh thu chỉ xuất hiện ở Miền Admin
       actions.appendChild(el('button', {
-        class: 'upgrade-chip',
-        title: 'Nâng cấp gói Pro (10.000đ) — Mở khóa đa camera, lịch sử & gọi khẩn cấp',
-        onclick: () => go('upgrade')
+        class: 'btn btn--primary btn--sm',
+        style: 'height:30px;padding:0 10px;font-size:11.5px',
+        title: 'Quản trị đơn hàng, doanh thu (609.000đ) & tạo License Key',
+        onclick: () => go('admin')
       }, [
-        el('span', {}, '👑 Pro'),
-        el('span', { class: 'topbar-hover-text' }, '· Nâng cấp 10.000đ')
+        el('span', {}, '💰'),
+        el('span', { class: 'topbar-hover-text' }, 'Quản trị Doanh thu (609k)')
       ]));
     } else {
-      actions.appendChild(el('button', {
-        class: `plan-badge plan-badge--${curPlan}`,
-        title: 'Bản quyền đang hoạt động — nhấn để xem bảng giá',
-        onclick: () => go('upgrade')
-      }, [
-        el('span', {}, curPlan === 'business' ? '🏥 Business' : '⭐ Pro'),
-        el('span', { class: 'topbar-hover-text' }, '· ' + (curUser ? curUser.planName : 'Trường mầm non'))
-      ]));
+      // Huy hiệu gói bản quyền chỉ xuất hiện ở Miền Khách hàng
+      const curPlan = (VC.auth && VC.auth.plan()) || 'free';
+      if (curPlan === 'free') {
+        actions.appendChild(el('button', {
+          class: 'upgrade-chip',
+          title: 'Nâng cấp gói Pro (10.000đ) — Mở khóa đa camera, lịch sử & gọi khẩn cấp',
+          onclick: () => go('upgrade')
+        }, [
+          el('span', {}, '👑 Pro'),
+          el('span', { class: 'topbar-hover-text' }, '· Nâng cấp 10.000đ')
+        ]));
+      } else {
+        actions.appendChild(el('button', {
+          class: `plan-badge plan-badge--${curPlan}`,
+          title: 'Bản quyền của bạn đang hoạt động — nhấn để xem chi tiết gói',
+          onclick: () => go('upgrade')
+        }, [
+          el('span', {}, curPlan === 'business' ? '🏥 Business' : '⭐ Pro'),
+          el('span', { class: 'topbar-hover-text' }, '· ' + (curUser ? curUser.planName : 'Trường mầm non'))
+        ]));
+      }
     }
 
-    // Nút Doanh thu (compact, hover shows label)
+    // Nút Đăng xuất / Chuyển miền nhanh (Admin <-> Khách hàng)
     actions.appendChild(el('button', {
       class: 'btn btn--ghost btn--sm',
       style: 'height:30px;padding:0 9px;font-size:11.5px',
-      title: 'Quản trị đơn hàng, doanh thu (609.000đ) & tạo License Key',
-      onclick: () => go('admin')
+      title: 'Đăng xuất hoặc chuyển đổi giữa Miền Admin và Miền Khách hàng',
+      onclick: () => VC.auth && VC.auth.logout()
     }, [
-      el('span', {}, '💰'),
-      el('span', { class: 'topbar-hover-text' }, 'Doanh thu (609k)')
+      el('span', {}, '🚪'),
+      el('span', { class: 'topbar-hover-text' }, 'Đổi miền / Đăng xuất')
     ]));
 
-    // Tài khoản
+    // Hồ sơ Tài khoản
     actions.appendChild(el('button', {
       class: 'icon-btn',
-      title: curUser ? `Tài khoản: ${curUser.email}` : 'Đăng nhập / Tài khoản',
+      title: curUser ? `Hồ sơ: ${curUser.email}` : 'Đăng nhập / Đăng ký',
       html: icon('user'),
       onclick: () => VC.auth && VC.auth.showAccount()
     }));
@@ -200,7 +223,16 @@
 
   /* ---------- Router ---------- */
   function go(view) {
-    if (!VC.views[view]) view = 'overview';
+    const isAdmin = Boolean(VC.auth && VC.auth.isAdmin);
+    if (view === 'admin' && !isAdmin) {
+      notify.toast({
+        title: 'Chỉ dành cho Quản trị viên (Admin)',
+        message: 'Miền Khách hàng không có quyền truy cập trang Quản trị Doanh thu.',
+        type: 'warn'
+      });
+      view = 'overview';
+    }
+    if (!VC.views[view]) view = isAdmin ? 'admin' : 'overview';
     store.set({ view }, 'route');
     render();
   }
@@ -352,6 +384,7 @@
 
     if (VC.auth) {
       await VC.auth.ensureLoggedIn();
+      store.state.view = (VC.auth && VC.auth.isAdmin) ? 'admin' : 'overview';
       VC.auth.onChange(async () => {
         try {
           const { items } = await api.fetchAlerts({ limit: 200 });

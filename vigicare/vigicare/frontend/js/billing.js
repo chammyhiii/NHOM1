@@ -289,16 +289,27 @@
         }
       });
       const mergedOrders = mergeOrders(orders);
+      const curUser = auth.user;
+      const isCustomer = !auth.isAdmin;
+      const displayOrders = isCustomer && curUser
+        ? mergedOrders.filter(o => o.userEmail && curUser.email && o.userEmail.toLowerCase() === curUser.email.toLowerCase())
+        : mergedOrders;
+
       plansWrap.innerHTML = '';
       plans.forEach(p => plansWrap.appendChild(pricingCard(p, plans, paymentReady)));
       compareCard.innerHTML = '';
       compareCard.appendChild(cardHead('Bảng So sánh Tính năng & Phạm vi Triển khai', 'chart'));
       compareCard.appendChild(compareTable(plans));
-      fillOrders(ordersCard, mergedOrders, plans);
+      fillOrders(ordersCard, displayOrders, plans, isCustomer);
     } catch (err) {
       plansWrap.innerHTML = '';
       plansWrap.appendChild(el('div', { class: 'card' }, [errorBox(err)]));
-      fillOrders(ordersCard, mergeOrders([]), []);
+      const curUser = auth.user;
+      const isCustomer = !auth.isAdmin;
+      const fallbackOrders = isCustomer && curUser
+        ? mergeOrders([]).filter(o => o.userEmail && curUser.email && o.userEmail.toLowerCase() === curUser.email.toLowerCase())
+        : mergeOrders([]);
+      fillOrders(ordersCard, fallbackOrders, [], isCustomer);
     }
   }
 
@@ -415,9 +426,10 @@
     ]);
   }
 
-  function fillOrders(card, orders) {
+  function fillOrders(card, orders, plans, isCustomer = false) {
     card.innerHTML = '';
-    card.appendChild(cardHead('Đơn hàng Đã Thanh toán Thành công trên Hệ thống', 'clock',
+    const title = isCustomer ? 'Đơn hàng & Giao dịch VietQR của tôi' : 'Đơn hàng Đã Thanh toán Thành công trên Hệ thống';
+    card.appendChild(cardHead(title, 'clock',
       el('span', { class: 'badge badge--ok' }, `${orders.filter(o => o.status === 'paid').length} đơn thành công`)
     ));
     if (!orders.length) {
