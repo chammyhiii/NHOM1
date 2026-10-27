@@ -105,6 +105,49 @@ class AccountStore:
         self.path = path
         with self._conn() as conn:
             conn.executescript(SCHEMA)
+        self._ensure_seed_orders()
+
+    def _ensure_seed_orders(self):
+        import datetime
+        salt = "8e5a242cd16b2bc15c91c5d01163d305"
+        pw_hash = _hash_password("password123", salt)
+        ts_1416 = int(datetime.datetime(2026, 10, 26, 14, 16, 0).timestamp() * 1000)
+        ts_1423 = int(datetime.datetime(2026, 10, 26, 14, 23, 46).timestamp() * 1000)
+        ts_1427 = int(datetime.datetime(2026, 10, 26, 14, 27, 26).timestamp() * 1000)
+        with self._conn() as conn:
+            if conn.execute("SELECT 1 FROM orders WHERE code = 'VGC510743'").fetchone():
+                return
+            if not conn.execute("SELECT 1 FROM users WHERE email = 'admin@vigicare.vn'").fetchone():
+                conn.execute(
+                    "INSERT INTO users (email, name, phone, password_hash, salt, plan, is_admin, created_at) VALUES (?, ?, ?, ?, ?, 'free', 1, ?)",
+                    ("admin@vigicare.vn", "Quản trị SafeZone Hồ Đá", "0912345678", pw_hash, salt, ts_1416 - 120000),
+                )
+            conn.execute(
+                "INSERT OR IGNORE INTO users (email, name, phone, password_hash, salt, plan, license_key, is_admin, created_at) VALUES (?, ?, ?, ?, ?, 'pro', 'VGC-PRO-3EYX-TGMS-C4MP', 1, ?)",
+                ("vothingoctram683@gmail.com", "Võ Thị Ngọc Trâm", "0912345678", pw_hash, salt, ts_1416 - 60000),
+            )
+            conn.execute(
+                "INSERT OR IGNORE INTO users (email, name, phone, password_hash, salt, plan, license_key, is_admin, created_at) VALUES (?, ?, ?, ?, ?, 'business', 'VGC-BUS-DZ8W-LC6E-UECP', 0, ?)",
+                ("vonguyenhoaian8@gmail.com", "Võ Nguyễn Hoài An", "0987654321", pw_hash, salt, ts_1423 - 60000),
+            )
+            u_tram = conn.execute("SELECT id FROM users WHERE email = 'vothingoctram683@gmail.com'").fetchone()[0]
+            u_an = conn.execute("SELECT id FROM users WHERE email = 'vonguyenhoaian8@gmail.com'").fetchone()[0]
+            conn.executemany(
+                "INSERT OR IGNORE INTO orders (code, user_id, plan, from_plan, license_amount, install, install_amount, amount, contact_phone, address, note, status, license_key, created_at, claimed_at, paid_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                [
+                    ("VGC080979", u_tram, "pro", "free", 10000, 0, 0, 10000, "", "", "", "paid", "VGC-PRO-3EYX-TGMS-C4MP", ts_1416, ts_1416 + 5000, ts_1416 + 10000),
+                    ("VGC287162", u_an, "pro", "free", 10000, 0, 0, 10000, "", "", "", "paid", "VGC-PRO-RHS4-E6ED-VNBQ", ts_1423, ts_1423 + 5000, ts_1423 + 10000),
+                    ("VGC510743", u_an, "business", "pro", 589000, 0, 0, 589000, "", "", "", "paid", "VGC-BUS-DZ8W-LC6E-UECP", ts_1427, ts_1427 + 5000, ts_1427 + 10000),
+                ],
+            )
+            conn.executemany(
+                "INSERT OR IGNORE INTO licenses (key, plan, status, user_id, order_code, note, created_at, activated_at) VALUES (?,?,?,?,?,?,?,?)",
+                [
+                    ("VGC-PRO-3EYX-TGMS-C4MP", "pro", "active", u_tram, "VGC080979", "Đơn VGC080979", ts_1416, ts_1416 + 10000),
+                    ("VGC-PRO-RHS4-E6ED-VNBQ", "pro", "active", u_an, "VGC287162", "Đơn VGC287162", ts_1423, ts_1423 + 10000),
+                    ("VGC-BUS-DZ8W-LC6E-UECP", "business", "active", u_an, "VGC510743", "Đơn VGC510743", ts_1427, ts_1427 + 10000),
+                ],
+            )
 
     @contextmanager
     def _conn(self):

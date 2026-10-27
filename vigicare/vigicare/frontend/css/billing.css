@@ -494,3 +494,80 @@
   margin-bottom: 14px;
   font-size: 12.5px;
 }
+
+
+/* ============================================================
+   HOVER-TO-REVEAL CHO TRANG THƯƠNG MẠI & QUẢN TRỊ DOANH THU
+   ============================================================ */
+.upgrade-chip {
+  height: 30px;
+  padding: 0 11px;
+  font-size: 11.5px;
+}
+.plan-badge {
+  padding: 3px 9px;
+  font-size: 11.5px;
+}
+.billing-hero {
+  padding: 14px 18px;
+  margin-bottom: 14px;
+}
+.billing-hero__title { font-size: 18px; margin: 2px 0; }
+.billing-hero__desc {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.26s ease, opacity 0.22s ease, margin-top 0.22s ease;
+}
+.billing-hero:hover .billing-hero__desc {
+  max-height: 90px;
+  opacity: 1;
+  margin-top: 6px;
+}
+
+.price-card {
+  padding: 18px 18px;
+}
+.price-card__tag,
+.price-card__install,
+.price-card__list {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  margin-top: 0;
+  margin-bottom: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  transition: max-height 0.28s ease, opacity 0.22s ease, margin 0.22s ease, padding 0.22s ease;
+}
+.price-card:hover .price-card__tag {
+  max-height: 48px;
+  opacity: 1;
+  margin-bottom: 10px;
+}
+.price-card:hover .price-card__install {
+  max-height: 48px;
+  opacity: 1;
+  padding: 7px 10px;
+  margin: 8px 0 12px;
+}
+.price-card:hover .price-card__list {
+  max-height: 260px;
+  opacity: 1;
+  margin-bottom: 14px;
+}
+.price-card .btn {
+  margin-top: 10px;
+}
+
+.kpi__sub {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.22s ease, opacity 0.2s ease, margin-top 0.2s ease;
+}
+.kpi:hover .kpi__sub {
+  max-height: 44px;
+  opacity: 1;
+  margin-top: 2px;
+}

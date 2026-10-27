@@ -565,3 +565,43 @@
   border-top-color: rgba(255, 255, 255, 0.05);
   background: rgba(20, 24, 33, 0.4);
 }
+
+
+/* ============================================================
+   THU GỌN BANNER HƯỚNG DẪN NHANH — RÀ CHUỘT MỚI HIỆN CHI TIẾT
+   ============================================================ */
+.quickstart-banner {
+  padding: 10px 14px !important;
+  margin-bottom: 14px !important;
+}
+.quickstart-step {
+  padding: 9px 12px !important;
+}
+.quickstart-step__info p {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  margin: 0 !important;
+  transition: max-height 0.24s ease, opacity 0.2s ease, margin-top 0.2s ease;
+}
+.quickstart-step:hover .quickstart-step__info p {
+  max-height: 60px;
+  opacity: 1;
+  margin-top: 3px !important;
+}
+.quickstart-banner__foot {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+  border-top: 0 !important;
+  transition: max-height 0.25s ease, opacity 0.2s ease, margin-top 0.2s ease, padding-top 0.2s ease;
+}
+.quickstart-banner:hover .quickstart-banner__foot {
+  max-height: 60px;
+  opacity: 1;
+  margin-top: 10px !important;
+  padding-top: 8px !important;
+  border-top: 1px dashed var(--line) !important;
+}

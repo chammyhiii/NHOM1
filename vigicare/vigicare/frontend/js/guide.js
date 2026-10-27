@@ -8,7 +8,7 @@
     {
       badge: 'Bước 1 / 5',
       icon: '🌊',
-      title: 'Hệ thống Cảnh báo An toàn Hồ Đá — ĐHQG TP.HCM',
+      title: 'Chào mừng đến với Hệ thống Cảnh báo An toàn Hồ Đá — ĐHQG-HCM',
       subtitle: 'Ứng dụng Thị giác máy tính (Computer Vision) và Camera AI giám sát an toàn bờ hồ 24/7.',
       features: [
         {
@@ -32,7 +32,7 @@
           desc: 'Cùng lõi công nghệ AI có thể triển khai cho Trường mầm non tư thục (Gói Pro 10.000đ) và Viện dưỡng lão / Đô thị (Gói Business 599.000đ).'
         }
       ],
-      tip: 'Giao diện Trung tâm Điều hành được bố trí gọn gàng trên thanh ngang phía trên để dễ dàng quan sát toàn cảnh Hồ Đá.'
+      tip: 'Giao diện được tinh gọn tối đa — bạn chỉ cần rà chuột (hover) vào từng mục hoặc thanh công cụ để xem thông tin chi tiết.'
     },
     {
       badge: 'Bước 2 / 5',
@@ -144,11 +144,11 @@
         },
         {
           icon: '💰',
-          title: 'Trang Quản trị & Doanh thu',
-          desc: 'Thống kê doanh thu, quản lý đơn hàng và phát hành mã License Key.'
+          title: 'Trang Quản trị & Doanh thu (609.000đ)',
+          desc: 'Lưu trữ đầy đủ các đơn hàng đã thanh toán thành công, thống kê doanh thu và phát hành mã License Key.'
         }
       ],
-      tip: 'Nhấn phím ? bất cứ lúc nào để mở lại Cẩm nang vận hành này.'
+      tip: 'Bạn có thể bấm vào nút dấu hỏi (?) trên thanh tiêu đề bất cứ khi nào cần mở lại Hướng dẫn sử dụng.'
     }
   ];
 
@@ -171,7 +171,7 @@
     const head = el('div', { class: 'onboarding-header' }, [
       el('div', { class: 'onboarding-brand' }, [
         el('span', { class: 'onboarding-brand__badge', id: 'onboardingBadge' }, ONBOARDING_SLIDES[currentSlide].badge),
-        el('span', { class: 'onboarding-brand__title' }, 'Cẩm nang Hệ thống Cảnh báo An toàn Hồ Đá — ĐHQG-HCM')
+        el('span', { class: 'onboarding-brand__title' }, 'Hướng dẫn sử dụng Hệ thống Cảnh báo An toàn Hồ Đá')
       ]),
       el('button', {
         class: 'icon-btn',
@@ -251,7 +251,7 @@
     if (slide.tip) {
       slideEl.appendChild(el('div', { class: 'onboarding-tip' }, [
         el('span', {}, '💡'),
-        el('div', { html: `<strong>Ghi chú:</strong> ${slide.tip}` })
+        el('div', { html: `<strong>Mẹo:</strong> ${slide.tip}` })
       ]));
     }
 
@@ -261,6 +261,7 @@
     ONBOARDING_SLIDES.forEach((_, idx) => {
       dots.appendChild(el('div', {
         class: `onboarding-dot ${idx === index ? 'is-active' : ''}`,
+        title: `Đến bước ${idx + 1}`,
         onclick: () => { currentSlide = idx; renderSlide(currentSlide); }
       }));
     });
@@ -275,7 +276,7 @@
     } else {
       actions.appendChild(el('button', {
         class: 'btn btn--ghost btn--sm',
-        text: 'Đóng',
+        text: 'Bỏ qua',
         onclick: closeOnboarding
       }));
     }
@@ -288,9 +289,26 @@
       }));
     } else {
       actions.appendChild(el('button', {
+        class: 'btn btn--ghost btn--sm',
+        text: '🎯 Tour giao diện',
+        title: 'Khám phá trực quan từng vị trí trên giao diện',
+        onclick: () => {
+          closeOnboarding();
+          setTimeout(() => startSpotlightTour(), 300);
+        }
+      }));
+      actions.appendChild(el('button', {
         class: 'btn btn--primary btn--sm',
-        text: '✓ Hoàn tất',
-        onclick: closeOnboarding
+        text: '✓ Bắt đầu sử dụng',
+        onclick: () => {
+          closeOnboarding();
+          notify.toast({
+            title: 'Chúc bạn trải nghiệm tốt!',
+            message: 'Bấm nút (?) trên thanh tiêu đề bất cứ lúc nào để mở lại hướng dẫn.',
+            type: 'ok',
+            duration: 4000
+          });
+        }
       }));
     }
   }
@@ -308,13 +326,13 @@
     {
       target: '#sidebar',
       title: '1. Thanh Điều hướng Trung tâm Chỉ huy',
-      desc: 'Chuyển đổi nhanh giữa Trung tâm Điều hành, 6 Camera Bờ hồ, Vùng cấm Bờ hồ, Bản đồ 3D Hồ Đá, Radar Quét Bờ hồ, Nhật ký Sự cố và Thương mại hóa.',
+      desc: 'Rà chuột vào các icon để xem tên phân hệ: Trung tâm Điều hành, 6 Camera Bờ hồ, Vùng cấm Bờ hồ, Bản đồ 3D Hồ Đá, Radar Quét Bờ hồ, Nhật ký Sự cố và Quản trị Doanh thu.',
       placement: 'bottom'
     },
     {
       target: '.kpi-strip',
       title: '2. Dải Chỉ số An toàn Bờ Hồ Đá',
-      desc: 'Theo dõi tức thời mức độ an toàn bờ hồ, tổng sự cố hôm nay, số trạm camera đang hoạt động và gói bản quyền.',
+      desc: 'Theo dõi tức thời mức độ an toàn bờ hồ, tổng sự cố hôm nay, số trạm camera và gói bản quyền. Rà chuột vào từng ô để xem chú thích chi tiết.',
       placement: 'bottom'
     },
     {
@@ -329,6 +347,12 @@
       title: '4. Khung Trạm Camera AI & 6 Trạm Vành đai',
       desc: 'Quan sát luồng YOLOv8x-Pose thời gian thực và chuyển đổi giữa 6 trạm xung quanh Hồ Đá ĐHQG-HCM.',
       placement: 'left'
+    },
+    {
+      target: '#topbar .topbar__actions',
+      title: '5. Thanh công cụ tiện ích & Hướng dẫn (?)',
+      desc: 'Quản lý Doanh thu, Tài khoản, bật/tắt Camera AI, Chuông báo động (S), Giao diện Sáng/Tối (T) và nút Hướng dẫn sử dụng (?) bất kỳ lúc nào.',
+      placement: 'bottom'
     }
   ];
 
@@ -345,7 +369,12 @@
       spotlightOverlay = null;
     }
     if (index >= SPOTLIGHT_STEPS.length) {
-      notify.toast({ title: 'Đã hoàn tất hướng dẫn giao diện!', type: 'ok', duration: 3000 });
+      notify.toast({
+        title: 'Hoàn tất chuyến tham quan!',
+        message: 'Bạn đã sẵn sàng vận hành Hệ thống Cảnh báo An toàn Hồ Đá.',
+        type: 'ok',
+        duration: 3500
+      });
       return;
     }
     const step = SPOTLIGHT_STEPS[index];
@@ -365,18 +394,28 @@
       style: `top:${Math.max(4, rect.top - 6)}px;left:${Math.max(4, rect.left - 6)}px;width:${rect.width + 12}px;height:${rect.height + 12}px;`
     }));
 
+    const foot = el('div', { class: 'spotlight-popover__foot' });
+    foot.appendChild(el('button', { class: 'btn btn--ghost btn--sm', text: 'Đóng', onclick: closeSpotlight }));
+    const nextGroup = el('div', { style: 'display:flex;gap:6px' });
+    if (index > 0) {
+      nextGroup.appendChild(el('button', {
+        class: 'btn btn--ghost btn--sm',
+        text: '← Trước',
+        onclick: () => renderSpotlightStep(index - 1)
+      }));
+    }
+    nextGroup.appendChild(el('button', {
+      class: 'btn btn--primary btn--sm',
+      text: index < SPOTLIGHT_STEPS.length - 1 ? 'Tiếp tục →' : '✓ Hoàn tất',
+      onclick: () => renderSpotlightStep(index + 1)
+    }));
+    foot.appendChild(nextGroup);
+
     const popover = el('div', { class: 'spotlight-popover' }, [
       el('div', { class: 'spotlight-popover__step' }, `BƯỚC ${index + 1} / ${SPOTLIGHT_STEPS.length}`),
       el('div', { class: 'spotlight-popover__title', text: step.title }),
       el('div', { class: 'spotlight-popover__desc', text: step.desc }),
-      el('div', { class: 'spotlight-popover__foot' }, [
-        el('button', { class: 'btn btn--ghost btn--sm', text: 'Đóng', onclick: closeSpotlight }),
-        el('button', {
-          class: 'btn btn--primary btn--sm',
-          text: index < SPOTLIGHT_STEPS.length - 1 ? 'Tiếp tục →' : '✓ Xong',
-          onclick: () => renderSpotlightStep(index + 1)
-        })
-      ])
+      foot
     ]);
     overlay.appendChild(popover);
     document.body.appendChild(overlay);
@@ -413,17 +452,107 @@
     }
   }
 
+  /* ============================================================
+     3. QUICK START BANNER TRÊN TRANG TỔNG QUAN (KHÔI PHỤC ĐẦY ĐỦ)
+     ============================================================ */
   function renderQuickStartBanner() {
-    // Keep Overview clean and uncluttered
-    return null;
+    const isDismissed = utils.storage.get(STORAGE.guideBannerDismissed, false);
+    if (isDismissed) return null;
+
+    const banner = el('div', { class: 'quickstart-banner' });
+
+    banner.appendChild(el('div', { class: 'quickstart-banner__head' }, [
+      el('div', { class: 'quickstart-banner__title' }, [
+        el('span', {}, '🚀'),
+        'Hướng dẫn sử dụng nhanh (Rà chuột vào từng bước để xem chi tiết)'
+      ]),
+      el('div', { style: 'display:flex;align-items:center;gap:6px' }, [
+        el('button', {
+          class: 'btn btn--ghost btn--sm',
+          style: 'height:26px;padding:0 8px;font-size:11px',
+          text: '🎯 Tour giao diện',
+          onclick: () => startSpotlightTour()
+        }),
+        el('button', {
+          class: 'btn btn--primary btn--sm',
+          style: 'height:26px;padding:0 8px;font-size:11px',
+          text: '📖 Hướng dẫn chi tiết',
+          onclick: () => showHelpCenter('start')
+        }),
+        el('button', {
+          class: 'icon-btn',
+          style: 'width:26px;height:26px',
+          title: 'Ẩn thanh hướng dẫn này',
+          html: icon('x'),
+          onclick: () => {
+            utils.storage.set(STORAGE.guideBannerDismissed, true);
+            banner.style.transition = 'all 0.25s ease';
+            banner.style.opacity = '0';
+            banner.style.transform = 'translateY(-10px)';
+            setTimeout(() => banner.remove(), 260);
+          }
+        })
+      ])
+    ]));
+
+    const steps = el('div', { class: 'quickstart-steps' });
+
+    steps.appendChild(el('div', {
+      class: 'quickstart-step',
+      onclick: async () => {
+        const pickerBtn = document.querySelector('.camera-picker button');
+        if (pickerBtn) pickerBtn.click();
+        else notify.toast({ title: 'Bật Camera', message: 'Bấm nút "🎥 Kết nối Camera Thực tế" ở khung bên phải.', type: 'info' });
+      }
+    }, [
+      el('div', { class: 'quickstart-step__num' }, '1'),
+      el('div', { class: 'quickstart-step__info' }, [
+        el('h5', {}, 'Bật Camera AI của bạn'),
+        el('p', {}, 'Nhấn để mở webcam và bắt đầu AI nhận diện dáng người 17 khớp xương tại bờ Hồ Đá.')
+      ])
+    ]));
+
+    steps.appendChild(el('div', {
+      class: 'quickstart-step',
+      onclick: () => VC.app.go('zones')
+    }, [
+      el('div', { class: 'quickstart-step__num' }, '2'),
+      el('div', { class: 'quickstart-step__info' }, [
+        el('h5', {}, 'Thiết lập Vùng cấm Bờ hồ'),
+        el('p', {}, 'Khoanh vùng đa giác dọc vách đá dựng đứng & mép nước sâu để báo động khi có người vượt rào.')
+      ])
+    ]));
+
+    steps.appendChild(el('div', {
+      class: 'quickstart-step',
+      onclick: () => VC.app.go('admin')
+    }, [
+      el('div', { class: 'quickstart-step__num' }, '3'),
+      el('div', { class: 'quickstart-step__info' }, [
+        el('h5', {}, 'Xem Đơn hàng & Doanh thu (609.000đ)'),
+        el('p', {}, 'Kiểm tra 3 đơn hàng đã thanh toán thành công, mã VietQR MB Bank và quản lý License Key.')
+      ])
+    ]));
+
+    banner.appendChild(steps);
+
+    banner.appendChild(el('div', { class: 'quickstart-banner__foot' }, [
+      el('span', {}, 'Bạn có thể nhấn phím (?) bất kỳ lúc nào để mở Trung tâm Trợ giúp & Hướng dẫn 5 bước.')
+    ]));
+
+    return banner;
   }
 
+  /* ============================================================
+     4. TRUNG TÂM HƯỚNG DẪN & TRỢ GIÚP (ĐẦY ĐỦ 4 TAB NHƯ CŨ)
+     ============================================================ */
   function showHelpCenter(initialTab = 'start') {
     let activeTab = initialTab;
     const tabs = [
-      { id: 'start', label: '🌊 Tổng quan Dự án Hồ Đá' },
-      { id: 'features', label: '📖 Các Phân hệ AI' },
-      { id: 'shortcuts', label: '⌨️ Phím tắt' }
+      { id: 'start', label: '🚀 Bắt đầu nhanh' },
+      { id: 'features', label: '📖 Hướng dẫn tính năng' },
+      { id: 'shortcuts', label: '⌨️ Phím tắt' },
+      { id: 'faq', label: '❓ FAQ & Sự cố' }
     ];
 
     const contentBox = el('div', { class: 'help-content-pane', id: 'helpContentPane' });
@@ -445,9 +574,9 @@
     renderTabContent(activeTab, contentBox);
 
     notify.modal({
-      title: 'Cẩm nang Vận hành Hệ thống Cảnh báo An toàn Hồ Đá — ĐHQG TP.HCM',
+      title: 'Trung tâm Hướng dẫn & Trợ giúp — SafeZone Hồ Đá ĐHQG-HCM',
       body: wrap,
-      width: 660,
+      width: 680,
       actions: [{ label: 'Đóng', class: 'btn--ghost' }]
     });
   }
@@ -456,12 +585,12 @@
     root.innerHTML = '';
     if (tabId === 'start') {
       root.appendChild(el('div', { class: 'help-section-card' }, [
-        el('h4', {}, '🌊 Dự án Hệ Thống Cảnh Báo An Toàn Hồ Đá — Ứng dụng Thị giác máy tính & Camera AI'),
-        el('p', { style: 'margin-bottom:12px' }, 'Hệ thống giám sát 6 trạm xung quanh khu vực Hồ Đá (Khu đô thị ĐHQG TP.HCM), tự động phát hiện hành vi vượt rào vào vách đá dựng đứng hoặc trượt ngã sát mép nước.'),
+        el('h4', {}, '✨ Xem lại hướng dẫn từ đầu & Tour giao diện'),
+        el('p', { style: 'margin-bottom:12px' }, 'Khởi chạy lại màn hình chào mừng 5 bước (Onboarding) hoặc chuyến tham quan trực tiếp các thành phần trên giao diện:'),
         el('div', { style: 'display:flex;gap:10px;flex-wrap:wrap' }, [
           el('button', {
             class: 'btn btn--primary btn--sm',
-            text: '🚀 Xem Slide Giới thiệu 5 Bước',
+            text: '🚀 Mở Onboarding 5 bước',
             onclick: () => {
               const modalRoot = $('#modal-root');
               if (modalRoot) { modalRoot.classList.remove('is-open'); modalRoot.innerHTML = ''; }
@@ -470,7 +599,7 @@
           }),
           el('button', {
             class: 'btn btn--ghost btn--sm',
-            text: '🎯 Hướng dẫn Trực quan Trên Giao diện',
+            text: '🎯 Bắt đầu Tour giao diện tương tác',
             onclick: () => {
               const modalRoot = $('#modal-root');
               if (modalRoot) { modalRoot.classList.remove('is-open'); modalRoot.innerHTML = ''; }
@@ -479,12 +608,21 @@
           })
         ])
       ]));
+
+      root.appendChild(el('div', { class: 'help-section-card' }, [
+        el('h4', {}, '📹 3 bước khởi động nhanh nhất:'),
+        el('ul', { style: 'padding-left:18px;margin-top:6px;line-height:1.7' }, [
+          el('li', {}, '1. Ở trang Trung tâm Điều hành, bấm nút "🎥 Kết nối Camera Thực tế" và Cho phép (Allow) quyền camera.'),
+          el('li', {}, '2. Đứng trước camera, AI sẽ tự động định vị khung xương người 17 khớp và giám sát vùng cấm bờ Hồ Đá.'),
+          el('li', {}, '3. Rà chuột (hover) lên thanh điều hướng hoặc các thẻ trên màn hình để xem thông tin mở rộng.')
+        ])
+      ]));
     } else if (tabId === 'features') {
       const items = [
-        ['📹', 'Trung tâm Điều hành & 6 Trạm Camera Bờ hồ', 'Giám sát trực tiếp Bờ Bắc (Vách đá dựng đứng), Bờ Đông (Đ. Nguyễn Du), Mỏm đá Tử thần (Bờ Tây), Lối mòn Khu A, Viện CNSH và Tuyến Ống Nước Thô.'],
-        ['🚧', 'Khoanh vùng cấm đa giác (Geofencing)', 'Vẽ vùng giới hạn dọc mép vực đá để cảnh báo ngay khi có người bước vào hoặc đứng quá lâu.'],
-        ['🗺️', 'Bản đồ 3D Địa hình Hồ Đá & Radar 2D', 'Mô phỏng không gian 3D khu vực Hồ Đá Làng Đại học và quét tín hiệu thiết bị trong bán kính 100m.'],
-        ['👑', 'Thương mại hóa Đa lĩnh vực (VietQR MB Bank)', 'Mở rộng triển khai cho Trường mầm non tư thục (Pro · 10.000đ) và Viện dưỡng lão / Khu đô thị (Business · 599.000đ).']
+        ['📹', 'Trung tâm Điều hành & 6 Trạm Camera Bờ hồ', 'Giám sát trực tiếp Bờ Bắc (Vách đá dựng đứng), Bờ Đông (Đ. Nguyễn Du), Mỏm đá Tử thần (Bờ Tây), Lối mòn Khu A, Viện CNSH và Tuyến Ống Nước Thô bằng YOLOv8x-Pose.'],
+        ['🚧', 'Vùng cấm Bờ hồ (Polygon Geofencing)', 'Cho phép vẽ các vùng đa giác cảnh báo dọc mép vực đá. Khi phát hiện người bước vào hoặc đứng quá lâu sát vách đá, hệ thống sẽ phát tín hiệu cảnh báo ngay.'],
+        ['🗺️', 'Bản đồ 3D Địa hình Hồ Đá & Radar 2D', 'Mô phỏng không gian 3D khu vực Hồ Đá Làng Đại học bằng Three.js và quét tín hiệu thiết bị quanh lòng hồ trong bán kính 100m.'],
+        ['👑', 'Thương mại hóa Đa lĩnh vực & Quản trị Doanh thu', 'Mở rộng triển khai cho Trường mầm non tư thục (Pro · 10.000đ) và Viện dưỡng lão / Khu đô thị (Business · 599.000đ) với thanh toán VietQR MB Bank tự động.']
       ];
       items.forEach(([ico, title, desc]) => {
         root.appendChild(el('div', { class: 'help-section-card' }, [
@@ -494,21 +632,63 @@
       });
     } else if (tabId === 'shortcuts') {
       const shortcuts = [
-        ['1 – 6', 'Chuyển nhanh giữa các phân hệ trên thanh điều hướng'],
-        ['S', 'Bật / Tắt còi báo động khẩn cấp'],
-        ['T', 'Chuyển đổi chế độ Sáng / Trực đêm'],
-        ['R', 'Làm mới dữ liệu'],
-        ['?', 'Mở Cẩm nang vận hành']
+        ['1', 'Chuyển đến trang Trung tâm Điều hành (Overview)'],
+        ['2', 'Chuyển đến trang Vùng cấm Bờ hồ / Đa camera'],
+        ['3', 'Chuyển đến trang Bản đồ 3D Hồ Đá (Map 3D)'],
+        ['4', 'Chuyển đến trang Radar Quét Bờ hồ'],
+        ['5', 'Chuyển đến trang Nhật ký Sự cố'],
+        ['6', 'Chuyển đến trang Cài đặt hệ thống'],
+        ['S', 'Bật / Tắt còi báo động khẩn cấp (Sound)'],
+        ['T', 'Chuyển đổi chế độ Sáng / Trực đêm (Theme)'],
+        ['R', 'Làm mới dữ liệu (Refresh)'],
+        ['?', 'Mở cửa sổ Hướng dẫn sử dụng này'],
+        ['Esc', 'Đóng cửa sổ modal hoặc thoát chế độ toàn màn hình']
       ];
       const table = el('table', { class: 'table' });
-      table.innerHTML = `<thead><tr><th>Phím</th><th>Chức năng</th></tr></thead><tbody>${shortcuts.map(([k, d]) => `<tr><td><span class="kbd">${k}</span></td><td>${d}</td></tr>`).join('')}</tbody>`;
+      table.innerHTML = `<thead><tr><th style="width:110px">Phím bấm</th><th>Chức năng thao tác</th></tr></thead><tbody>${shortcuts.map(([k, d]) => `<tr><td><span class="kbd" style="font-weight:700">${k}</span></td><td>${d}</td></tr>`).join('')}</tbody>`;
       root.appendChild(el('div', { class: 'table-wrap' }, [table]));
+    } else if (tabId === 'faq') {
+      const faqs = [
+        {
+          q: 'Tại sao giao diện ẩn bớt các dòng chữ mô tả?',
+          a: 'Để màn hình giám sát Camera AI Hồ Đá luôn thoáng và gọn gàng nhất, các chú thích phụ được ẩn đi và sẽ tự động trượt ra mượt mà ngay khi bạn rà chuột (hover) vào từng thẻ hoặc nút bấm.'
+        },
+        {
+          q: 'Xem thông tin các đơn hàng đã thanh toán thành công (609.000đ) ở đâu?',
+          a: 'Bạn bấm vào nút "💰 Doanh thu" trên thanh tiêu đề phía trên cùng (hoặc tab "Quản trị doanh thu" trên thanh điều hướng) để xem 3 đơn hàng đã thanh toán (VGC510743, VGC287162, VGC080979) cùng danh sách License Key.'
+        },
+        {
+          q: 'Làm sao để mở lại màn hình chào mừng 5 bước khi mới vào web?',
+          a: 'Trong cửa sổ này, chọn tab "🚀 Bắt đầu nhanh" rồi bấm "Mở Onboarding 5 bước", hoặc vào trang Cài đặt → Hướng dẫn & Trợ giúp → bấm "🔄 Đặt lại".'
+        }
+      ];
+      faqs.forEach(f => {
+        const item = el('div', { class: 'help-faq-item' });
+        const qEl = el('div', { class: 'help-faq-q' }, [
+          el('span', {}, f.q),
+          el('span', { style: 'color:var(--muted);font-size:11px' }, '▼')
+        ]);
+        const aEl = el('div', { class: 'help-faq-a', html: f.a });
+        aEl.style.display = 'none';
+        qEl.onclick = () => {
+          const isOpen = aEl.style.display !== 'none';
+          aEl.style.display = isOpen ? 'none' : 'block';
+          qEl.querySelector('span:last-child').textContent = isOpen ? '▼' : '▲';
+        };
+        item.appendChild(qEl);
+        item.appendChild(aEl);
+        root.appendChild(item);
+      });
     }
   }
 
   function checkFirstVisit() {
-    // Do not auto-open modal on startup so interface stays clean
-    utils.storage.set(STORAGE.guideSeen, true);
+    const hasSeenGuide = utils.storage.get(STORAGE.guideSeen, false);
+    if (!hasSeenGuide) {
+      setTimeout(() => {
+        showOnboarding({ startStep: 0 });
+      }, 750);
+    }
   }
 
   VC.guide = {

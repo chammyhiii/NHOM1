@@ -42,18 +42,19 @@
     return (list || []).map(normalizeAlert);
   }
 
-  /* ---------- Render horizontal command nav ---------- */
+  /* ---------- Render horizontal command nav (hover-to-reveal labels) ---------- */
   function renderSidebar() {
     const sidebar = $('#sidebar');
     sidebar.innerHTML = '';
 
     const nav = el('nav', { class: 'sidebar__nav' });
     const items = VC.NAV.slice();
-    items.push({ id: 'admin', label: 'Quản trị & Doanh thu', icon: 'shield' });
+    items.push({ id: 'admin', label: 'Quản trị doanh thu', icon: 'shield' });
     items.forEach(item => {
       const btn = el('button', {
         class: `nav-btn ${store.state.view === item.id ? 'is-active' : ''}`,
         'data-view': item.id,
+        title: item.label,
         onclick: () => go(item.id)
       }, [
         el('div', { html: icon(item.icon) }),
@@ -65,11 +66,12 @@
 
     sidebar.appendChild(el('div', { class: 'sidebar__foot' }, [
       el('div', { class: 'status-pill', title: 'Trạm AI Hồ Đá hoạt động ổn định' }),
-      el('div', {}, `SafeZone v${VC.APP.version}`)
+      el('span', { class: 'sidebar__foot-hint', text: '💡 Rà chuột để xem chi tiết ·' }),
+      el('div', {}, `v${VC.APP.version}`)
     ]));
   }
 
-  /* ---------- Render clean top command bar ---------- */
+  /* ---------- Render compact top command bar (hover-to-reveal details) ---------- */
   function renderTopbar() {
     const topbar = $('#topbar');
     topbar.innerHTML = '';
@@ -78,9 +80,10 @@
     const brandRow = el('div', {
       class: 'topbar__brand-row',
       style: 'cursor:pointer',
+      title: 'Rà chuột để xem mô tả dự án · Nhấn để về Trung tâm Điều hành',
       onclick: () => go('overview')
     }, [
-      el('div', { class: 'topbar__logo', title: VC.APP.name }, '🌊'),
+      el('div', { class: 'topbar__logo' }, '🌊'),
       el('div', { class: 'topbar__title' }, [
         el('h1', { text: VC.APP.name }),
         el('p', { text: VC.APP.tagline })
@@ -89,10 +92,12 @@
     topbar.appendChild(brandRow);
 
     const actions = el('div', { class: 'topbar__actions' });
-    actions.appendChild(el('span', { class: 'chip', title: 'Kết nối AI & WebSocket thời gian thực tới trạm giám sát Hồ Đá' }, [
+
+    // Status + Clock chip (hover reveals full label)
+    actions.appendChild(el('span', { class: 'chip', title: 'API & WebSocket đang kết nối trực tiếp tới Trạm AI Hồ Đá' }, [
       el('span', { class: 'dot' }),
-      el('span', {}, 'Trạm AI Hồ Đá · '),
-      el('b', { id: 'clock' }, fmtTime())
+      el('b', { id: 'clock' }, fmtTime()),
+      el('span', { class: 'topbar-hover-text' }, '· AI Hồ Đá Online')
     ]));
 
     const curPlan = (VC.auth && VC.auth.plan()) || 'free';
@@ -100,25 +105,60 @@
     if (curPlan === 'free') {
       actions.appendChild(el('button', {
         class: 'upgrade-chip',
-        title: 'Triển khai bản quyền thương mại & nâng cấp Pro / Đa lĩnh vực',
+        title: 'Nâng cấp gói Pro (10.000đ) — Mở khóa đa camera, lịch sử & gọi khẩn cấp',
         onclick: () => go('upgrade')
-      }, '👑 Thương mại & Pro'));
+      }, [
+        el('span', {}, '👑 Pro'),
+        el('span', { class: 'topbar-hover-text' }, '· Nâng cấp 10.000đ')
+      ]));
     } else {
       actions.appendChild(el('button', {
         class: `plan-badge plan-badge--${curPlan}`,
-        title: 'Bản quyền đang hoạt động — nhấn để xem chi tiết',
+        title: 'Bản quyền đang hoạt động — nhấn để xem bảng giá',
         onclick: () => go('upgrade')
-      }, (curPlan === 'business' ? '🏛️ ' : '⭐ ') + (curUser ? curUser.planName : 'Gói Pro')));
+      }, [
+        el('span', {}, curPlan === 'business' ? '🏥 Business' : '⭐ Pro'),
+        el('span', { class: 'topbar-hover-text' }, '· ' + (curUser ? curUser.planName : 'Trường mầm non'))
+      ]));
     }
 
+    // Nút Doanh thu (compact, hover shows label)
+    actions.appendChild(el('button', {
+      class: 'btn btn--ghost btn--sm',
+      style: 'height:30px;padding:0 9px;font-size:11.5px',
+      title: 'Quản trị đơn hàng, doanh thu (609.000đ) & tạo License Key',
+      onclick: () => go('admin')
+    }, [
+      el('span', {}, '💰'),
+      el('span', { class: 'topbar-hover-text' }, 'Doanh thu (609k)')
+    ]));
+
+    // Tài khoản
+    actions.appendChild(el('button', {
+      class: 'icon-btn',
+      title: curUser ? `Tài khoản: ${curUser.email}` : 'Đăng nhập / Tài khoản',
+      html: icon('user'),
+      onclick: () => VC.auth && VC.auth.showAccount()
+    }));
+
+    // Bật/Tắt Camera AI
     actions.appendChild(el('button', {
       class: `icon-btn ${s.cameraOn ? 'is-active' : ''}`,
       id: 'cameraToggleBtn',
-      title: s.cameraOn ? 'Luồng Camera AI đang BẬT (nhấn để tạm ngắt)' : 'Luồng Camera AI đang TẮT (nhấn để bật)',
+      title: s.cameraOn ? 'Camera AI đang BẬT (nhấn để tắt)' : 'Camera AI đang TẮT (nhấn để bật)',
       html: icon('camera'),
       onclick: toggleCamera
     }));
 
+    // Âm thanh (Phím S)
+    actions.appendChild(el('button', {
+      class: `icon-btn ${s.sound ? 'is-active' : ''}`,
+      title: 'Bật/tắt âm thanh cảnh báo (Phím S)',
+      html: icon(s.sound ? 'volume' : 'mute'),
+      onclick: toggleSound
+    }));
+
+    // Đổi giao diện Sáng/Tối (Phím T)
     actions.appendChild(el('button', {
       class: 'icon-btn',
       title: 'Đổi giao diện Sáng / Tối (Phím T)',
@@ -126,11 +166,31 @@
       onclick: toggleTheme
     }));
 
+    // Làm mới (Phím R)
     actions.appendChild(el('button', {
       class: 'icon-btn',
-      title: curUser ? `Tài khoản: ${curUser.email}` : 'Tài khoản & Bản quyền',
-      html: icon('user'),
-      onclick: () => VC.auth && VC.auth.showAccount()
+      title: 'Làm mới dữ liệu (Phím R)',
+      html: icon('refresh'),
+      onclick: () => { VC.app.rerender(); notify.toast({ title: 'Đã làm mới', type: 'info', duration: 1400 }); }
+    }));
+
+    // Hướng dẫn sử dụng (Phím ?)
+    actions.appendChild(el('button', {
+      class: 'icon-btn',
+      id: 'helpBtn',
+      title: 'Hướng dẫn sử dụng website (Phím ?)',
+      html: icon('help'),
+      onclick: () => {
+        if (VC.guide && VC.guide.showHelpCenter) VC.guide.showHelpCenter('start');
+      }
+    }));
+
+    // Cài đặt
+    actions.appendChild(el('button', {
+      class: 'icon-btn',
+      title: 'Cài đặt hệ thống',
+      html: icon('settings'),
+      onclick: () => go('settings')
     }));
 
     topbar.appendChild(actions);
@@ -202,7 +262,7 @@
     utils.storage.set(VC.STORAGE.theme, next);
     notify.toast({
       title: 'Đã đổi giao diện',
-      message: next === 'dark' ? 'Chế độ ban đêm (Trực đêm Hồ Đá)' : 'Chế độ ban ngày',
+      message: next === 'dark' ? 'Chế độ tối (Trực đêm Hồ Đá)' : 'Chế độ sáng',
       type: 'info', duration: 1600
     });
     renderTopbar();
@@ -214,7 +274,7 @@
     store.set({ sound: next });
     utils.storage.set(VC.STORAGE.sound, next);
     notify.toast({
-      title: next ? 'Đã bật còi cảnh báo' : 'Đã tắt còi cảnh báo',
+      title: next ? 'Đã bật âm thanh cảnh báo' : 'Đã tắt âm thanh cảnh báo',
       type: next ? 'ok' : 'warn', duration: 1600
     });
     if (next) notify.alarm('ok');
@@ -250,7 +310,7 @@
 
     refreshMetrics();
     if (store.state.view === 'overview' && VC.views.refreshOverviewRight && VC.views.refreshOverviewRight()) {
-      // Giữ nguyên luồng video không bị nháy khi có cảnh báo mới
+      // Giữ nguyên luồng video không bị nháy
     } else if (store.state.view === 'overview' || store.state.view === 'live') {
       render();
     }
@@ -327,7 +387,7 @@
     setTimeout(() => {
       notify.toast({
         title: `${VC.APP.name} đã sẵn sàng`,
-        message: `Đang giám sát ${store.activeCameras()} trạm camera quanh Hồ Đá ĐHQG-HCM`,
+        message: `Đang giám sát ${store.activeCameras()} trạm camera quanh Hồ Đá · Nhấn ? để xem hướng dẫn`,
         type: 'info',
         duration: 5000
       });

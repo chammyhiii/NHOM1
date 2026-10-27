@@ -458,3 +458,101 @@
   text-align: right;
   font-weight: 600;
 }
+
+
+/* ============================================================
+   CHẾ ĐỘ TINH GỌN — RÀ CHUỘT (HOVER) MỚI HIỆN CHI TIẾT PHỤ
+   ============================================================ */
+.kpi-tile {
+  padding: 11px 14px;
+  transition: transform var(--trans), box-shadow var(--trans), border-color var(--trans);
+}
+.kpi-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-2);
+  border-color: var(--primary-line);
+}
+.kpi-tile__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--bg-3);
+  display: grid;
+  place-items: center;
+  font-size: 17px;
+  flex-shrink: 0;
+}
+.kpi-tile__body { flex: 1; min-width: 0; }
+.kpi-tile__sub {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  margin-top: 0;
+  transition: max-height 0.24s ease, opacity 0.2s ease, margin-top 0.2s ease;
+}
+.kpi-tile:hover .kpi-tile__sub {
+  max-height: 40px;
+  opacity: 1;
+  margin-top: 3px;
+}
+
+.station-chip__zone {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  margin-top: 0;
+  transition: max-height 0.22s ease, opacity 0.2s ease, margin-top 0.2s ease;
+}
+.station-chip:hover .station-chip__zone {
+  max-height: 28px;
+  opacity: 1;
+  margin-top: 2px;
+}
+
+.quick {
+  align-items: center;
+  padding: 11px 13px;
+  transition: all var(--trans);
+}
+.quick:hover {
+  align-items: flex-start;
+  border-color: var(--primary-line);
+  box-shadow: var(--shadow-1);
+}
+.quick p {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  margin-top: 0;
+  transition: max-height 0.26s ease, opacity 0.22s ease, margin-top 0.22s ease;
+}
+.quick:hover p {
+  max-height: 110px;
+  opacity: 1;
+  margin-top: 4px;
+}
+
+.video__top,
+.video-controls__info,
+.card__sub {
+  opacity: 0;
+  transition: opacity 0.22s ease;
+}
+.card:hover .video__top,
+.card:hover .video-controls__info,
+.card:hover .card__sub {
+  opacity: 1;
+}
+
+.settings-row__desc {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  margin-top: 0;
+  transition: max-height 0.22s ease, opacity 0.2s ease, margin-top 0.2s ease;
+}
+.settings-row:hover .settings-row__desc {
+  max-height: 48px;
+  opacity: 1;
+  margin-top: 2px;
+}
