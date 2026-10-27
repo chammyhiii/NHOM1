@@ -24,20 +24,27 @@
 
   const privateClientId = getPrivateClientId();
 
+  function sanitizeDeviceId(id) {
+    if (!id || typeof id !== 'string') return '';
+    if (id === 'default' || id.includes(' ') || id.length < 4) return '';
+    return id;
+  }
+
   function readSelectedDevice() {
     try {
-      return localStorage.getItem(STORAGE_KEY) || '';
+      return sanitizeDeviceId(localStorage.getItem(STORAGE_KEY) || '');
     } catch (error) {
-      console.warn('[VC] Không thể đọc camera đã lưu', error);
       return '';
     }
   }
 
   function saveSelectedDevice(deviceId) {
     try {
-      if (deviceId) localStorage.setItem(STORAGE_KEY, deviceId);
+      const clean = sanitizeDeviceId(deviceId);
+      if (clean) localStorage.setItem(STORAGE_KEY, clean);
+      else localStorage.removeItem(STORAGE_KEY);
     } catch (error) {
-      console.warn('[VC] Không thể lưu camera đã chọn', error);
+      /* ignore */
     }
   }
 
@@ -45,51 +52,61 @@
 
   function isSupported() {
     return Boolean(
-      window.isSecureContext &&
       navigator.mediaDevices &&
-      navigator.mediaDevices.getUserMedia
+      typeof navigator.mediaDevices.getUserMedia === 'function'
     );
   }
 
   async function refreshDevices() {
-    if (!isSupported()) return [];
-    devices = (await navigator.mediaDevices.enumerateDevices())
-      .filter(device => device.kind === 'videoinput');
-    if (selectedDeviceId && !devices.some(device => device.deviceId === selectedDeviceId)) {
-      selectedDeviceId = devices[0]?.deviceId || '';
+    if (!isSupported() || !navigator.mediaDevices.enumerateDevices) return [];
+    try {
+      const all = await navigator.mediaDevices.enumerateDevices();
+      devices = all.filter(device => device.kind === 'videoinput');
+      if (selectedDeviceId && !devices.some(device => device.deviceId === selectedDeviceId)) {
+        selectedDeviceId = sanitizeDeviceId(devices[0]?.deviceId || '');
+      }
+      return devices;
+    } catch (e) {
+      return [];
     }
-    return devices;
   }
 
-  async function enable(deviceId = selectedDeviceId) {
+  async function enable(requestedDeviceId = selectedDeviceId) {
     if (!isSupported()) {
-      throw new Error('Trình duyệt này không hỗ trợ truy cập camera.');
+      throw new Error('Trình duyệt không hỗ trợ WebRTC Camera (hãy mở bằng HTTPS hoặc localhost).');
     }
 
+    const cleanId = sanitizeDeviceId(requestedDeviceId);
     stop();
+
     const videoConstraints = {
       width: { ideal: 1280 },
       height: { ideal: 720 }
     };
-    if (deviceId) {
-      videoConstraints.deviceId = { exact: deviceId };
+    if (cleanId) {
+      // Dùng ideal thay vì exact để không bao giờ bị lỗi OverconstrainedError khi ID thiết bị thay đổi
+      videoConstraints.deviceId = { ideal: cleanId };
     }
-    const constraints = {
-      video: videoConstraints,
-      audio: false
-    };
+
     try {
-      stream = await navigator.mediaDevices.getUserMedia(constraints);
-    } catch (e) {
       stream = await navigator.mediaDevices.getUserMedia({
-        video: deviceId ? { deviceId: { exact: deviceId } } : true,
+        video: videoConstraints,
+        audio: false
+      });
+    } catch (err1) {
+      // Fallback sang cấu hình video cơ bản nhất để luôn xin được quyền camera
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: true,
         audio: false
       });
     }
+
     const track = stream.getVideoTracks()[0];
-    selectedDeviceId = track.getSettings().deviceId || deviceId || '';
+    const settings = (track && track.getSettings) ? track.getSettings() : {};
+    selectedDeviceId = sanitizeDeviceId(settings.deviceId || cleanId || '');
     saveSelectedDevice(selectedDeviceId);
     await refreshDevices();
+
     if (VC.store && VC.store.state) {
       VC.store.state.cameraOn = true;
     }

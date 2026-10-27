@@ -163,24 +163,24 @@
   }
 
   function cameraPicker() {
-    const devices = VC.camera.getDevices();
+    const devices = VC.camera.getDevices().filter(d => d && d.deviceId);
     const select = el('select', {
       class: 'camera-picker__select',
       'aria-label': 'Chọn nguồn camera thu hình'
     });
     if (!devices.length) {
-      select.appendChild(el('option', {}, 'Camera mặc định của thiết bị'));
+      select.appendChild(el('option', { value: '' }, 'Camera mặc định của thiết bị'));
     } else {
       devices.forEach((device, index) => {
         select.appendChild(el('option', {
-          value: device.deviceId,
+          value: device.deviceId || '',
           selected: device.deviceId === VC.camera.currentDeviceId()
         }, device.label || `Camera trạm ${index + 1}`));
       });
     }
     select.addEventListener('change', async () => {
       try {
-        await VC.camera.enable(select.value);
+        await VC.camera.enable(select.value || '');
         VC.app.rerender();
         notify.toast({ title: 'Đã chuyển nguồn thu hình', message: select.options[select.selectedIndex].text, type: 'ok' });
       } catch (error) {
@@ -192,24 +192,26 @@
     const button = el('button', {
       class: `btn ${isCamActive ? 'btn--primary' : 'btn--ghost'} btn--sm`,
       type: 'button',
-      disabled: !VC.camera.isSupported(),
       onclick: async () => {
         if (isCamActive) {
           VC.camera.stop();
           VC.app.rerender();
-          notify.toast({ title: 'Đã chuyển sang luồng AI Server', message: 'Đang hiển thị luồng xử lý từ trạm AI.', type: 'info' });
+          notify.toast({ title: 'Đã tắt Camera thiết bị này', message: 'Đã chuyển về màn hình chờ riêng tư.', type: 'info' });
           return;
         }
         try {
-          await VC.camera.enable(select.value);
+          await VC.camera.enable(select.value || '');
           VC.app.rerender();
-          notify.toast({ title: 'Đã kết nối Camera thực tế', message: 'Đang phân tích tư thế & vùng cấm bờ hồ theo thời gian thực.', type: 'ok' });
+          notify.toast({ title: 'Đã kết nối Camera thực tế (Private)', message: 'Đang phân tích tư thế & vùng cấm bờ hồ riêng trên máy của bạn.', type: 'ok' });
         } catch (error) {
+          const isDenied = error && (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError' || /permission|denied/i.test(error.message));
           notify.toast({
-            title: 'Không thể mở camera',
-            message: `${error.message} Hãy cấp quyền truy cập camera trên trình duyệt.`,
+            title: isDenied ? 'Trình duyệt đang chặn quyền Camera' : 'Không thể mở camera',
+            message: isDenied
+              ? 'Hãy bấm vào biểu tượng ổ khóa 🔒 (hoặc máy quay 🎥) bên trái thanh địa chỉ trình duyệt → Bật "Cho phép (Allow)" Camera rồi thử lại.'
+              : `${error.message}`,
             type: 'danger',
-            duration: 5000
+            duration: 6500
           });
         }
       }
